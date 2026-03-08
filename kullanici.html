@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kullanıcı Paneli | HAMDİ KARAKAYA BEAUTY</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+    rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="page page--dashboard">
+
+  
+  <header class="site-header" style="background: #fff; padding: 12px 0;">
+    <div class="container site-header__inner" style="max-width: 1400px;">
+      <a href="index.html" class="brand">
+        <span class="brand__mark">HK</span>
+        <span class="brand__text">HAMDİ KARAKAYA <span>BEAUTY</span></span>
+      </a>
+      <div style="display:flex; gap: 16px; align-items:center;">
+
+        <a href="#" onclick="logout();" class="btn btn--outline btn--sm"><i
+            class="fa-solid fa-arrow-right-from-bracket"></i> Çıkış
+          Yap</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container main-with-sidebar" style="max-width: 1400px;">
+    
+    <aside class="sidebar reveal">
+      <div class="sidebar-user">
+        <div class="sidebar-user__avatar">
+          <i class="fa-solid fa-user-tie" style="font-size: 2rem;"></i>
+        </div>
+        <div class="sidebar-user__info">
+          <h3>Hoş Geldiniz, <span class="dynamic-user-name">Gizem</span></h3>
+          <p>VIP Üye</p>
+        </div>
+      </div>
+      <nav class="sidebar-menu">
+        <button class="sidebar-link active" onclick="switchPanel('dashboard', this)"><i
+            class="fa-solid fa-chart-pie"></i> Özet Tablosu</button>
+        <button class="sidebar-link" onclick="switchPanel('appointments', this)"><i
+            class="fa-solid fa-calendar-check"></i> Randevularım</button>
+        <button class="sidebar-link" onclick="switchPanel('new-booking', this)"><i class="fa-solid fa-plus-circle"></i>
+          Yeni Randevu Al</button>
+        <button class="sidebar-link" onclick="switchPanel('reports', this)"><i
+            class="fa-solid fa-clock-rotate-left"></i> Geçmiş İşlemler</button>
+        <button class="sidebar-link" onclick="switchPanel('profile', this)"><i class="fa-solid fa-gear"></i>
+          Ayarlar</button>
+      </nav>
+    </aside>
+
+    
+    <main class="content reveal reveal-delay-1">
+
+      
+      <section id="panel-dashboard" class="panel active">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Sistem Özeti</h2>
+            <p class="panel-desc">Son işlemlerinize ait hızlı bir bakış.</p>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card__icon"><i class="fa-solid fa-star"></i></div>
+            <div class="stat-card__info">
+              <h4>Sadakat Puanı</h4>
+              <p id="user-loyalty-pts">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon" style="color:#2e7d32; background:#e8f5e9;"><i
+                class="fa-solid fa-calendar-check"></i></div>
+            <div class="stat-card__info">
+              <h4>Tamamlanan</h4>
+              <p id="user-completed-pts">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon" style="color:#f57f17; background:#fff8e1;"><i class="fa-solid fa-clock"></i>
+            </div>
+            <div class="stat-card__info">
+              <h4>Yaklaşan</h4>
+              <p id="user-pending-pts">0</p>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom:16px; font-size:1.4rem;">Yaklaşan Onaylı Randevu / Son Randevular</h3>
+        <div id="user-upcoming-appointments">
+          
+        </div>
+      </section>
+
+      
+      <section id="panel-appointments" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Tüm Randevularım</h2>
+            <p class="panel-desc">Gelecek ve beklemede olan randevularınızı yönetin.</p>
+          </div>
+          <button class="btn btn--primary btn--sm"
+            onclick="document.querySelector('button[onclick*=\'new-booking\']').click();"><i
+              class="fa-solid fa-plus"></i> Randevu Al</button>
+        </div>
+        <div class="appointment-list" id="user-all-appointments-list">
+          
+        </div>
+      </section>
+
+      
+      <section id="panel-new-booking" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Yeni Randevu Talebi</h2>
+            <p class="panel-desc">Size uygun gün ve saati seçerek randevunuzu anında ayırtın.</p>
+          </div>
+        </div>
+
+        <form id="bookingForm" onsubmit="handleBooking(event)">
+          <div class="wizard-step">
+            <h3>1. Hizmet Seçimi</h3>
+            <div class="grid-form">
+              <div class="form-field">
+                <select id="book-category" name="category" class="form-field__input" required>
+                  <option value="" disabled selected>Hizmet Kategorisi Seçin</option>
+                  <option value="Hair Design / Saç">Hair Design / Saç</option>
+                  <option value="Skin Care / Cilt Bakımı">Skin Care / Cilt Bakımı</option>
+                  <option value="Nail Art / Tırnak">Nail Art / Tırnak</option>
+                  <option value="Makeup / Makyaj">Makeup / Makyaj</option>
+                </select>
+                <label class="form-field__label">Kategori</label>
+              </div>
+              <div class="form-field">
+                <select id="book-service" name="service" class="form-field__input" required>
+                  <option value="" disabled selected>Alt Hizmet Seçin</option>
+                  <option value="Keratin Bakımı">Keratin Bakımı</option>
+                  <option value="Balyaj / Ombre">Balyaj / Ombre</option>
+                  <option value="Medikal Manikür">Medikal Manikür</option>
+                  <option value="Altın İğne">Altın İğne</option>
+                  <option value="HydraFacial">HydraFacial</option>
+                  <option value="Saç Kesimi">Saç Kesimi</option>
+                </select>
+                <label class="form-field__label">İşlem</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-step">
+            <h3>2. Tarih ve Saat</h3>
+            <div class="grid-form">
+              <div class="form-field">
+                <input type="date" id="book-date" name="date" class="form-field__input" required>
+                <label class="form-field__label" style="top:0; font-size:0.75rem;">Randevu Tarihi</label>
+              </div>
+              <div class="form-field">
+                <input type="time" id="book-time" name="time" class="form-field__input" required>
+                <label class="form-field__label" style="top:0; font-size:0.75rem;">Saat</label>
+              </div>
+              <div class="form-field">
+                <select id="book-expert" name="expert" class="form-field__input" required>
+                  <option value="Farketmez" selected>Farketmez</option>
+                  <option value="Hamdi Karakaya">Hamdi Karakaya</option>
+                  <option value="Ayşe Demir">Ayşe Demir</option>
+                  <option value="Selin Yıldız">Selin Yıldız</option>
+                </select>
+                <label class="form-field__label">Tercih Edilen Uzman (Opsiyonel)</label>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn--primary" style="padding: 16px 30px; font-size: 1.1rem;"><i
+              class="fa-solid fa-check"></i> Randevuyu Tamamla</button>
+        </form>
+      </section>
+
+      
+      <section id="panel-reports" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Geçmiş İşlemler</h2>
+            <p class="panel-desc">Salonda daha önce yaptırdığınız işlemleri görüntüleyin.</p>
+          </div>
+        </div>
+        
+        <div style="text-align:center; padding: 60px 0;">
+          <i class="fa-solid fa-clock-rotate-left"
+            style="font-size: 3rem; color: var(--color-border-subtle); margin-bottom: 20px;"></i>
+          <h3 style="font-size: 1.2rem; color: var(--color-text-muted);">Henüz geçmiş bir işleminiz bulunmuyor.</h3>
+        </div>
+      </section>
+
+      
+      <section id="panel-profile" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Bildirim ve Ayarlar</h2>
+            <p class="panel-desc">Hesap tercihlerinizi yönetin.</p>
+          </div>
+        </div>
+        <div class="grid-form" style="max-width: 600px;">
+          <div style="background:#fdfcf0; padding:20px; border-radius:8px; border:1px solid #e6dfa8;">
+            <h3 style="margin-bottom:10px; font-size:1.1rem;"><i class="fa-brands fa-whatsapp"></i> WhatsApp
+              Bildirimleri</h3>
+            <p style="font-size:0.9rem; color:#666; margin-bottom:14px;">Randevu güncellemelerini WhatsApp üzerinden
+              anında alın.</p>
+            <button class="btn btn--outline btn--sm" onclick="showLocalToast('Ayarlar güncellendi.')">Açık/Kapalı
+              Konumuna Getir</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  
+  <div id="appToast" class="toast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">İşlem başarılı.</span>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol | HAMDİ KARAKAYA BEAUTY</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+        rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            background: var(--color-surface-alt);
+        }
+
+        .auth-img {
+            flex: 1;
+            display: none;
+            background: url('https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?q=80&w=1200&auto=format&fit=crop') center/cover no-repeat;
+            position: relative;
+        }
+
+        .auth-img::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(15, 17, 26, 0.8), transparent);
+        }
+
+        .auth-img-text {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            right: 40px;
+            z-index: 2;
+            color: #fff;
+        }
+
+        .auth-img-text h2 {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .auth-img-text p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .auth-form-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .auth-header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 2.2rem;
+            color: var(--color-secondary);
+            margin-bottom: 8px;
+        }
+
+        .auth-header p {
+            color: var(--color-text-muted);
+        }
+
+        .auth-brand {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-card {
+            background: var(--color-surface);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 992px) {
+            .auth-img {
+                display: block;
+            }
+
+            .auth-form-wrapper {
+                max-width: 500px;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-page">
+        <div class="auth-img reveal">
+            <div class="auth-img-text">
+                <h2>Ayrıcalıklı Müşterimiz Olun</h2>
+                <p>Premium üye olarak size özel hazırlanan kampanyalardan, öncelikli randevu haklarından kolayca
+                    faydalanın.</p>
+            </div>
+        </div>
+
+        <div class="auth-form-wrapper reveal reveal-delay-1">
+            <div class="auth-brand">
+                <a href="index.html" class="brand">
+                    <span class="brand__mark">HK</span>
+                    <span class="brand__text" style="color:var(--color-secondary)">HAMDİ KARAKAYA
+                        <span>BEAUTY</span></span>
+                </a>
+            </div>
+
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>Hesap Oluştur</h1>
+                    <p>Yeni bir hesap oluşturarak ayrıcalıklara erişin.</p>
+                </div>
+
+                <form class="form" onsubmit="handleRegister(event)">
+
+                    <div class="grid-2">
+                        <div class="form-field">
+                            <input type="text" id="fname" class="form-field__input" placeholder=" " required>
+                            <label for="fname" class="form-field__label"><i class="fa-regular fa-user"></i>
+                                Adınız</label>
+                        </div>
+                        <div class="form-field">
+                            <input type="text" id="lname" class="form-field__input" placeholder=" " required>
+                            <label for="lname" class="form-field__label"><i class="fa-regular fa-user"></i>
+                                Soyadınız</label>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <input type="email" id="email" class="form-field__input" placeholder=" " required>
+                        <label for="email" class="form-field__label"><i class="fa-regular fa-envelope"></i> E-posta
+                            Adresi</label>
+                    </div>
+
+                    <div class="form-field">
+                        <input type="tel" id="phone" class="form-field__input" placeholder=" " required>
+                        <label for="phone" class="form-field__label"><i class="fa-solid fa-phone"></i> Cep
+                            Telefonu</label>
+                    </div>
+
+                    <div class="form-field">
+                        <input type="password" id="password" class="form-field__input" placeholder=" " required>
+                        <label for="password" class="form-field__label"><i class="fa-solid fa-lock"></i> Şifre
+                            Belirleyin</label>
+                    </div>
+
+                    <label
+                        style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size: 0.85rem; margin-bottom: 24px; color: var(--color-text-muted);">
+                        <input type="checkbox" style="accent-color:var(--color-primary); margin-top:3px;" required>
+                        Aydınlatma metnini ve kullanım koşullarını okudum, kabul ediyorum.
+                    </label>
+
+                    <button type="submit" class="btn btn--primary" style="width:100%; padding:14px; font-size:1.1rem;">
+                        Kayıt Ol <i class="fa-solid fa-user-plus" style="margin-left: 8px;"></i>
+                    </button>
+                </form>
+
+                <div style="text-align:center; margin-top:30px; font-size:0.95rem; color:var(--color-text-muted);">
+                    Zaten bir hesabınız var mı? <a href="login.html"
+                        style="color:var(--color-secondary); font-weight:600; border-bottom:1px solid var(--color-secondary);">Giriş
+                        Yapın</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div id="appToast" class="toast">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">İşlem başarılı.</span>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+
+</html>

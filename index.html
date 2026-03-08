@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HAMDİ KARAKAYA BEAUTY | Premium Güzellik Salonu</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+    rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="page">
+
+  
+  <header class="site-header" id="header">
+    <div class="container site-header__inner">
+      <a href="index.html" class="brand">
+        <span class="brand__mark">HK</span>
+        <span class="brand__text">HAMDİ KARAKAYA <span>BEAUTY</span></span>
+      </a>
+      <button class="nav-toggle" id="navToggle"><i class="fa-solid fa-bars"></i></button>
+      <nav class="site-nav" id="siteNav">
+        <a href="#about" class="site-nav__link">Hakkımızda</a>
+        <a href="#services" class="site-nav__link">Hizmetlerimiz</a>
+        <a href="#team" class="site-nav__link">Uzmanlarımız</a>
+        <a href="#gallery" class="site-nav__link">Galeri</a>
+        <a href="#contact" class="site-nav__link">İletişim</a>
+        <div id="auth-buttons" style="display:inline-flex; gap:10px;">
+          <a href="login.html" class="btn btn--outline btn--sm" id="nav-login-btn">Giriş Yap</a>
+          <a href="kullanici.html" class="btn btn--primary btn--sm" id="nav-book-btn">Randevu Al</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    
+    <section class="hero" id="home">
+      <div class="container">
+        <div class="hero__content reveal">
+          <h1 class="hero__title">
+            Güzelliğinizin <span>Mimarı Olalım.</span>
+          </h1>
+          <p class="hero__subtitle">
+            Klasik güzellik anlayışının ötesinde, size özel dokunuşlarla hazırlanan premium bakım ritüellerimizi
+            keşfedin. Zamanı durduran deneyime hoş geldiniz.
+          </p>
+          <div class="hero__actions">
+            <a href="kullanici.html" class="btn btn--gold">Hemen Randevu Al</a>
+            <a href="#services" class="btn btn--outline"
+              style="color:#fff; border-color: rgba(255,255,255,0.4)">Hizmetleri İncele</a>
+          </div>
+        </div>
+      </div>
+      <div class="hero__badge">
+        HK HAMDİ KARAKAYA<br>BEAUTY
+      </div>
+    </section>
+
+    
+    <section class="section section--bg" id="about">
+      <div class="container about-grid">
+        <div class="about-image reveal">
+          <img src="https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=1000&auto=format&fit=crop"
+            alt="Elite Salon İç Mekan"
+            style="border-radius:24px; box-shadow:0 25px 50px -12px rgba(212, 175, 55, 0.15); object-fit:cover; width:100%; height:100%;">
+        </div>
+        <div class="about-content reveal reveal-delay-1">
+          <div class="section__header">
+            <span class="section__eyebrow">Biz Kimiz?</span>
+            <h2 class="section__title">Güzelliğe adanmış bir <i>sanat galerisi.</i></h2>
+          </div>
+          <p>HAMDİ KARAKAYA BEAUTY olarak 2010 yılından bu yana, estetik ve sağlığı tek çatı altında buluşturan
+            yenilikçi vizyonumuzla hizmet veriyoruz.</p>
+          <p>Uluslararası standartlardaki hijyen anlayışımız, dünyaca ünlü dermokozmetik markalarımız ve her biri
+            alanında uzman kadromuz ile misafirlerimize kendilerini eşsiz hissedecekleri bir deneyim sunuyoruz.</p>
+
+          <div class="about-features">
+            <div class="about-feature">
+              <div class="about-feature-icon"><i class="fa-solid fa-medal"></i></div>
+              <span class="about-feature-text">Ödüllü<br>Uzmanlar</span>
+            </div>
+            <div class="about-feature">
+              <div class="about-feature-icon"><i class="fa-solid fa-leaf"></i></div>
+              <span class="about-feature-text">Organik<br>Ürünler</span>
+            </div>
+            <div class="about-feature">
+              <div class="about-feature-icon"><i class="fa-solid fa-gem"></i></div>
+              <span class="about-feature-text">Premium<br>Hizmet</span>
+            </div>
+            <div class="about-feature">
+              <div class="about-feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+              <span class="about-feature-text">Hijyenik<br>Ortam</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="services">
+      <div class="container">
+        <div class="section__header reveal">
+          <span class="section__eyebrow">Hizmetlerimiz</span>
+          <h2 class="section__title">Ayrıcalıklı <i>Bakım Ritüelleri</i></h2>
+          <p class="section__subtitle">Size özel hazırlanan saç, cilt, makyaj ve spa ritüelleriyle yenilenin.</p>
+        </div>
+
+        <div class="services-menu" id="index-services-list">
+          
+        </div>
+
+        <div class="section__header" style="margin-top:40px; margin-bottom:0;">
+          <a href="kullanici.html" class="btn btn--primary">Online Randevu Oluştur</a>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="section section--dark" id="team">
+      <div class="container">
+        <div class="section__header reveal">
+          <span class="section__eyebrow">Ustalarımız</span>
+          <h2 class="section__title">Uzman <i>Kadromuz</i></h2>
+          <p class="section__subtitle">Her biri kendi alanında birer sanatçı olan ustalarımızla tanışın.</p>
+        </div>
+
+        <div class="team-grid">
+          <div class="team-card reveal">
+            <img src="img/467156124_18041508335511587_8180936035272291777_n.jpg" alt="Hamdi Karakaya"
+              class="team-card__image">
+            <div class="team-card__info">
+              <div class="team-card__name">Hamdi Karakaya</div>
+              <div class="team-card__role">Kurucu / Master Hair Stylist</div>
+            </div>
+          </div>
+          <div class="team-card reveal reveal-delay-1">
+            <img src="https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?q=80&w=600&auto=format&fit=crop"
+              alt="Uzman 2" class="team-card__image">
+            <div class="team-card__info">
+              <div class="team-card__name">Ayşe Demir</div>
+              <div class="team-card__role">Kıdemli Estetisyen (Cilt Uzmanı)</div>
+            </div>
+          </div>
+          <div class="team-card reveal reveal-delay-2">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop"
+              alt="Uzman 3" class="team-card__image">
+            <div class="team-card__info">
+              <div class="team-card__name">Selin Yıldız</div>
+              <div class="team-card__role">Master Nail Artist / Makyaj</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="section section--bg" id="gallery">
+      <div class="container">
+        <div class="section__header reveal">
+          <span class="section__eyebrow">Atmosfer</span>
+          <h2 class="section__title">Salonumuzdan <i>Kareler</i></h2>
+        </div>
+
+        <div class="gallery-grid reveal">
+          <div class="gallery-item"><img src="img/makeup.png" alt="Makyaj ve Güzellik">
+            <div class="gallery-overlay"><i class="fa-solid fa-expand"></i></div>
+          </div>
+          <div class="gallery-item"><img
+              src="https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=800&auto=format&fit=crop"
+              alt="İşlem Detay">
+            <div class="gallery-overlay"><i class="fa-solid fa-expand"></i></div>
+          </div>
+          <div class="gallery-item"><img
+              src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?q=80&w=800&auto=format&fit=crop"
+              alt="Tırnak ve Bakım">
+            <div class="gallery-overlay"><i class="fa-solid fa-expand"></i></div>
+          </div>
+          <div class="gallery-item"><img
+              src="https://images.unsplash.com/photo-1580618672591-eb180b1a973f?q=80&w=800&auto=format&fit=crop"
+              alt="Saç Tasarımı">
+            <div class="gallery-overlay"><i class="fa-solid fa-expand"></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="section section--dark"
+      style="background: url('https://images.unsplash.com/photo-1516975080661-422fc9967e52?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat; position: relative;">
+      <div style="position: absolute; inset: 0; background: rgba(15, 17, 26, 0.85);"></div>
+      <div class="container" style="position: relative; z-index: 2;">
+        <div class="testimonials-wrapper reveal">
+          <i class="fa-solid fa-quote-left" style="font-size: 3rem; color: var(--color-gold); margin-bottom: 20px;"></i>
+          <p class="testimonial-text">
+            "Yıllardır saçımı gözüm kapalı emanet ettiğim tek yer. Hamdi Bey ve ekibinin profesyonelliği, salonun
+            inanılmaz enerjisi ve kullanılan ürünlerin kalitesi gerçekten bir numara."
+          </p>
+          <div class="testimonial-author">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop"
+              alt="Müşteri" class="testimonial-avatar">
+            <div class="testimonial-author-info">
+              <div class="testimonial-name">Zeynep K.</div>
+              <div class="testimonial-role">V.I.P Müşteri</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    <section class="section" id="contact">
+      <div class="container">
+        <div class="section__header reveal">
+          <span class="section__eyebrow">İletişim & Randevu</span>
+          <h2 class="section__title">Bize <i>Ulaşın</i></h2>
+        </div>
+
+        <div class="contact-grid reveal">
+          <div class="contact-info">
+            <h3>Ziyaret Edin</h3>
+            <div class="contact-list">
+              <div class="contact-item">
+                <div class="contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="contact-text">
+                  <h4>Lokasyon</h4>
+                  <p>Meram Yeniyol<br>Konya</p>
+                </div>
+              </div>
+              <div class="contact-item">
+                <div class="contact-icon"><i class="fa-solid fa-phone"></i></div>
+                <div class="contact-text">
+                  <h4>Telefon</h4>
+                  <p>+90 551 505 7480<br>+90 (212) 345 67 89</p>
+                </div>
+              </div>
+              <div class="contact-item">
+                <div class="contact-icon"><i class="fa-solid fa-clock"></i></div>
+                <div class="contact-text">
+                  <h4>Çalışma Saatleri</h4>
+                  <p>Pzt - Cts: 09:00 - 20:00<br>Pazar: Kapalı</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="contact-form-wrap">
+            <h3>Hızlı Mesaj Bırakın</h3>
+            <form class="form" id="contactForm" onsubmit="handleContactForm(event)">
+              <div class="form-field">
+                <input type="text" id="c-name" class="form-field__input" placeholder=" " required>
+                <label for="c-name" class="form-field__label">Adınız Soyadınız</label>
+              </div>
+              <div class="form-field">
+                <input type="email" id="c-email" class="form-field__input" placeholder=" " required>
+                <label for="c-email" class="form-field__label">E-posta Adresiniz</label>
+              </div>
+              <div class="form-field">
+                <textarea id="c-msg" class="form-field__input" placeholder=" " required></textarea>
+                <label for="c-msg" class="form-field__label">Mesajınız</label>
+              </div>
+              <button type="submit" class="btn btn--primary">Mesajı Gönder</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="brand">
+            <span class="brand__mark">HK</span>
+            <span class="brand__text">HAMDİ KARAKAYA <span>BEAUTY</span></span>
+          </a>
+          <p>Uluslararası standartlarda premium güzellik ve bakım deneyimi. Kendinizi özel hissetmek için doğru
+            adrestesiniz.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Hızlı Menü</h4>
+          <div class="footer-links">
+            <a href="#about">Hakkımızda</a>
+            <a href="#services">Hizmetlerimiz</a>
+            <a href="#team">Uzmanlarımız</a>
+            <a href="#gallery">Galeri</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Sistem</h4>
+          <div class="footer-links">
+            <a href="login.html">Kullanıcı Girişi</a>
+            <a href="kullanici.html">Randevu Paneli</a>
+            <a href="#">Sıkça Sorulan Sorular</a>
+            <a href="#">Aydınlatma Metni</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Instagram'da Ben</h4>
+          <p style="color: rgba(255,255,255,0.6); margin-bottom: 12px; font-size: 0.9rem;">En yeni saç tasarımları ve
+            cilt bakım tüyoları için beni takip edin.</p>
+          <div class="social-links">
+            <a href="https://www.instagram.com/hamdikrky43" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@hamdikrky43" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+            <a href="https://api.whatsapp.com/send?phone=905515057480&text=Merhaba,%20randevu%20almak%20istiyorum."
+              target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 HAMDİ KARAKAYA BEAUTY. Tüm Hakları Saklıdır.</p>
+
+      </div>
+    </div>
+  </footer>
+
+  <div id="appToast" class="toast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">İşlem başarılı.</span>
+  </div>
+
+
+  <div id="lightbox" class="lightbox">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-content" id="lightbox-img">
+  </div>
+
+
+  <script src="js/main.js"></script>
+</body>
+
+</html>
