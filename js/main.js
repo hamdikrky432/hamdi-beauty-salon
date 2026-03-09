@@ -117,7 +117,7 @@ window.showLocalToast = function (message, isError = false) {
   }, 4000);
 };
 
-window.handleBooking = function (event) {
+window.handleBooking = async function (event) {
   event.preventDefault();
   const btn = event.target.querySelector('button[type="submit"]');
   const originalText = btn.innerHTML;
@@ -135,14 +135,16 @@ window.handleBooking = function (event) {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
   btn.disabled = true;
 
-  setTimeout(() => {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-
+  try {
+    // Kullanıcı kontrolü
     let currentUser = "Misafir";
+    let userId = null;
     try {
       const userObj = JSON.parse(localStorage.getItem("hk_auth_user"));
-      if (userObj && userObj.name) currentUser = userObj.name;
+      if (userObj) {
+        currentUser = userObj.name || userObj.email;
+        userId = userObj.id || null;
+      }
     } catch (e) { }
 
     let servicePrice = "0";
@@ -154,25 +156,23 @@ window.handleBooking = function (event) {
       }
     } catch (e) { }
 
-    const newAppointment = {
-      id: "APP-" + Math.floor(Math.random() * 100000),
-      userName: currentUser,
-      service: service,
-      price: servicePrice,
-      date: date,
-      time: time,
-      expert: expert,
-      status: "pending",
-      createdAt: new Date().toISOString()
-    };
+    // Supabase'e Kaydet
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert([
+        {
+          user_name: currentUser,
+          user_id: userId,
+          service: service,
+          price: servicePrice,
+          date: date,
+          time: time,
+          expert: expert,
+          status: "pending"
+        }
+      ]);
 
-    let appointments = [];
-    try {
-      appointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
-    } catch (e) { }
-
-    appointments.unshift(newAppointment); // Add to beginning
-    localStorage.setItem("hk_appointments_db", JSON.stringify(appointments));
+    if (error) throw error;
 
     showLocalToast("Randevunuz başarıyla oluşturuldu. Yönlendiriliyorsunuz...");
     event.target.reset();
@@ -182,79 +182,97 @@ window.handleBooking = function (event) {
       if (appointmentsBtn) {
         appointmentsBtn.click();
       } else {
-
         if (typeof loadUserAppointments === 'function') loadUserAppointments();
       }
     }, 1500);
 
-  }, 1500);
+  } catch (err) {
+    console.error("Randevu kayit hatasi:", err);
+    showLocalToast("Randevu oluşturulurken bir hata meydana geldi.", true);
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
 };
 
-window.loadUserAppointments = function () {
+window.loadUserAppointments = async function () {
   const container = document.querySelector("#panel-appointments .appointment-list");
-
-  let appointments = [];
-  try {
-    appointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
-  } catch (e) { }
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center; padding: 40px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
 
   let currentUser = "Misafir";
+  let userId = null;
   try {
     const userObj = JSON.parse(localStorage.getItem("hk_auth_user"));
-    if (userObj && userObj.name) currentUser = userObj.name;
+    if (userObj) {
+      currentUser = userObj.name;
+      userId = userObj.id;
+    }
   } catch (e) { }
 
-  const myAppointments = appointments.filter(a => a.userName === currentUser);
+  try {
+    let myAppointments = [];
+    let query = supabase.from('appointments').select('*').order('created_at', { ascending: false });
 
-  let completedCount = 0;
-  let pendingCount = 0;
-
-  myAppointments.forEach(app => {
-    if (app.status === 'approved') completedCount++;
-    if (app.status === 'pending') pendingCount++;
-  });
-
-  const loyaltyPtsStr = document.getElementById("user-loyalty-pts");
-  const completedPtsStr = document.getElementById("user-completed-pts");
-  const pendingPtsStr = document.getElementById("user-pending-pts");
-
-  if (loyaltyPtsStr) loyaltyPtsStr.textContent = completedCount * 50; // Her tamamlanan randevu 50 puan
-  if (completedPtsStr) completedPtsStr.textContent = completedCount;
-  if (pendingPtsStr) pendingPtsStr.textContent = pendingCount;
-
-  const upcomingContainer = document.getElementById("user-upcoming-appointments");
-  if (upcomingContainer) {
-    if (myAppointments.length === 0) {
-      upcomingContainer.innerHTML = '<div style="padding: 20px; text-align:center; color:#888;">Son randevunuz bulunmamaktadır.</div>';
+    // Kullanıcı ID'si varsa ID'ye göre çek (RLS kuralları gereği kendi datasını alacak)
+    // Yoksa da isim eşleşmesi yap (Misafir vs.)
+    if (userId) {
+      query = query.eq('user_id', userId);
     } else {
-
-      const recentApps = myAppointments.slice(0, 2);
-      upcomingContainer.innerHTML = recentApps.map(app => {
-        const statusClass = app.status === 'approved' ? 'approved' : (app.status === 'rejected' ? 'rejected' : 'pending');
-        const statusText = app.status === 'approved' ? 'Onaylandı' : (app.status === 'rejected' ? 'İptal Edildi' : 'Onay Bekleniyor');
-
-        return `
-              <div class="appointment-row" style="background:#fdfcf0; border-color:#e6dfa8; margin-bottom:10px;">
-                <div class="app-details">
-                  <h3>${app.service}</h3>
-                  <p>
-                    <span><i class="fa-regular fa-calendar"></i> ${app.date}</span>
-                    <span><i class="fa-regular fa-clock"></i> ${app.time}</span>
-                    <span><i class="fa-regular fa-user"></i> Uzman: ${app.expert}</span>
-                  </p>
-                </div>
-                <div class="app-status">
-                  <span class="badge ${statusClass}">${statusText}</span>
-                  <button class="btn btn--outline btn--sm" onclick="showLocalToast('Randevu detayı mailinize gönderildi.')">Detay <i class="fa-solid fa-eye"></i></button>
-                </div>
-              </div>
-              `;
-      }).join('');
+      query = query.eq('user_name', currentUser);
     }
-  }
 
+    const { data, error } = await query;
 
-  if (container) {
+    if (error) throw error;
+    if (data) myAppointments = data;
+
+    let completedCount = 0;
+    let pendingCount = 0;
+
+    myAppointments.forEach(app => {
+      if (app.status === 'approved') completedCount++;
+      if (app.status === 'pending') pendingCount++;
+    });
+
+    const loyaltyPtsStr = document.getElementById("user-loyalty-pts");
+    const completedPtsStr = document.getElementById("user-completed-pts");
+    const pendingPtsStr = document.getElementById("user-pending-pts");
+
+    if (loyaltyPtsStr) loyaltyPtsStr.textContent = completedCount * 50;
+    if (completedPtsStr) completedPtsStr.textContent = completedCount;
+    if (pendingPtsStr) pendingPtsStr.textContent = pendingCount;
+
+    const upcomingContainer = document.getElementById("user-upcoming-appointments");
+    if (upcomingContainer) {
+      if (myAppointments.length === 0) {
+        upcomingContainer.innerHTML = '<div style="padding: 20px; text-align:center; color:#888;">Son randevunuz bulunmamaktadır.</div>';
+      } else {
+        const recentApps = myAppointments.slice(0, 2);
+        upcomingContainer.innerHTML = recentApps.map(app => {
+          const statusClass = app.status === 'approved' ? 'approved' : (app.status === 'rejected' ? 'rejected' : 'pending');
+          const statusText = app.status === 'approved' ? 'Onaylandı' : (app.status === 'rejected' ? 'İptal Edildi' : 'Onay Bekleniyor');
+
+          return `
+                  <div class="appointment-row" style="background:#fdfcf0; border-color:#e6dfa8; margin-bottom:10px;">
+                    <div class="app-details">
+                      <h3>${app.service}</h3>
+                      <p>
+                        <span><i class="fa-regular fa-calendar"></i> ${app.date}</span>
+                        <span><i class="fa-regular fa-clock"></i> ${app.time}</span>
+                        <span><i class="fa-regular fa-user"></i> Uzman: ${app.expert}</span>
+                      </p>
+                    </div>
+                    <div class="app-status">
+                      <span class="badge ${statusClass}">${statusText}</span>
+                      <button class="btn btn--outline btn--sm" onclick="showLocalToast('Randevu detayı mailinize gönderildi.')">Detay <i class="fa-solid fa-eye"></i></button>
+                    </div>
+                  </div>
+                  `;
+        }).join('');
+      }
+    }
+
     if (myAppointments.length === 0) {
       container.innerHTML = '<div style="text-align:center; padding: 40px; color:#888;">Henüz randevunuz bulunmuyor.</div>';
       return;
@@ -265,30 +283,46 @@ window.loadUserAppointments = function () {
       const statusText = app.status === 'approved' ? 'Onaylandı' : (app.status === 'rejected' ? 'İptal Edildi' : 'Onay Bekleniyor');
 
       return `
-        <div class="appointment-row">
-          <div class="app-details">
-            <h3>${app.service}</h3>
-            <p>
-              <span><i class="fa-regular fa-calendar"></i> ${app.date}</span>
-              <span><i class="fa-regular fa-clock"></i> ${app.time}</span>
-              <span><i class="fa-regular fa-user"></i> ${app.expert}</span>
-            </p>
+          <div class="appointment-row">
+            <div class="app-details">
+              <h3>${app.service}</h3>
+              <p>
+                <span><i class="fa-regular fa-calendar"></i> ${app.date}</span>
+                <span><i class="fa-regular fa-clock"></i> ${app.time}</span>
+                <span><i class="fa-regular fa-user"></i> ${app.expert}</span>
+              </p>
+            </div>
+            <div class="app-status">
+              <span class="badge ${statusClass}">${statusText}</span>
+              ${app.status === 'pending' ? `<button class="btn btn--outline btn--sm" onclick="cancelAppointment('${app.id}')">İptal <i class="fa-solid fa-xmark"></i></button>` : ''}
+            </div>
           </div>
-          <div class="app-status">
-            <span class="badge ${statusClass}">${statusText}</span>
-            ${app.status === 'pending' ? `<button class="btn btn--outline btn--sm" onclick="cancelAppointment('${app.id}')">İptal <i class="fa-solid fa-xmark"></i></button>` : ''}
-          </div>
-        </div>
-      `;
+        `;
     }).join('');
+
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div style="text-align:center; padding: 40px; color:#f44336;">Randevular yüklenirken bir hata oluştu.</div>';
   }
 };
 
-window.cancelAppointment = function (id) {
+window.cancelAppointment = async function (id) {
   if (!confirm("Randevuyu iptal etmek istediğinize emin misiniz?")) return;
-  updateAppointmentStatus(id, "rejected");
-  loadUserAppointments();
-  showLocalToast("Randevu iptal edildi.", true);
+  // Supabase'den sil (veya statüyü rejected yap)
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'rejected' })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    showLocalToast("Randevu iptal edildi.", true);
+    loadUserAppointments();
+  } catch (err) {
+    console.error(err);
+    showLocalToast("İptal işlemi başarısız.", true);
+  }
 };
 
 const lightbox = document.getElementById("lightbox");
@@ -517,36 +551,44 @@ window.checkAuthState = function () {
   }
 };
 
-window.handleContactForm = function (event) {
+window.handleContactForm = async function (event) {
   event.preventDefault();
   const nameInput = document.getElementById("c-name");
   const emailInput = document.getElementById("c-email");
   const msgInput = document.getElementById("c-msg");
+  const btn = event.target.querySelector('button[type="submit"]');
 
   if (!nameInput || !emailInput || !msgInput) return;
 
-  const newMessage = {
-    id: "MSG-" + Math.floor(Math.random() * 100000),
-    name: nameInput.value.trim(),
-    email: emailInput.value.trim(),
-    message: msgInput.value.trim(),
-    date: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-    isRead: false
-  };
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gönderiliyor...';
+  btn.disabled = true;
 
-  let messages = [];
   try {
-    messages = JSON.parse(localStorage.getItem("hk_messages_db")) || [];
-  } catch (e) { }
+    const { error } = await supabase
+      .from('messages')
+      .insert([
+        {
+          name: nameInput.value.trim(),
+          email: emailInput.value.trim(),
+          message: msgInput.value.trim()
+        }
+      ]);
 
-  messages.unshift(newMessage);
-  localStorage.setItem("hk_messages_db", JSON.stringify(messages));
+    if (error) throw error;
 
-  showLocalToast('Mesajınız başarıyla iletildi. En kısa sürede dönüş sağlanacaktır.');
-  event.target.reset();
+    showLocalToast('Mesajınız başarıyla iletildi. En kısa sürede dönüş sağlanacaktır.');
+    event.target.reset();
 
-  if (typeof loadAdminNotifications === 'function') {
-    window.loadAdminNotifications();
+    if (typeof loadAdminNotifications === 'function') {
+      window.loadAdminNotifications();
+    }
+  } catch (err) {
+    console.error(err);
+    showLocalToast('Mesaj gönderilirken hata oluştu.', true);
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
   }
 };
 
@@ -562,59 +604,74 @@ window.toggleAdminNotifications = function () {
   }
 };
 
-window.loadAdminNotifications = function () {
+window.loadAdminNotifications = async function () {
   const countSpan = document.getElementById("admin-notif-count");
   const listDiv = document.getElementById("admin-notif-list");
 
   if (!countSpan || !listDiv) return;
 
-  let messages = [];
   try {
-    messages = JSON.parse(localStorage.getItem("hk_messages_db")) || [];
-  } catch (e) { }
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  const unreadCount = messages.filter(m => !m.isRead).length;
-  countSpan.textContent = unreadCount;
+    if (error) throw error;
 
-  if (unreadCount > 0) {
-    countSpan.style.color = "#fff";
-    countSpan.style.background = "#f44336";
-    countSpan.style.padding = "2px 6px";
-    countSpan.style.borderRadius = "50%";
-    countSpan.style.fontSize = "0.75rem";
-  } else {
-    countSpan.style.background = "transparent";
-    countSpan.style.color = "inherit";
-    countSpan.style.padding = "0";
+    const safeMessages = messages || [];
+    const unreadCount = safeMessages.filter(m => !m.is_read).length;
+    countSpan.textContent = unreadCount;
+
+    if (unreadCount > 0) {
+      countSpan.style.color = "#fff";
+      countSpan.style.background = "#f44336";
+      countSpan.style.padding = "2px 6px";
+      countSpan.style.borderRadius = "50%";
+      countSpan.style.fontSize = "0.75rem";
+    } else {
+      countSpan.style.background = "transparent";
+      countSpan.style.color = "inherit";
+      countSpan.style.padding = "0";
+    }
+
+    if (safeMessages.length === 0) {
+      listDiv.innerHTML = "<div style='text-align:center; color:#888; padding:20px;'>Henüz mesaj yok.</div>";
+      return;
+    }
+
+    listDiv.innerHTML = safeMessages.map(m => {
+      const bg = m.is_read ? "transparent" : "#fffcf2";
+      const dateStr = new Date(m.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+      return `
+          <div style="padding:15px; border-bottom:1px solid #eee; background:${bg};">
+            <div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">${m.name} <span style="font-weight:400; font-size:0.75rem; color:#888; float:right;">${dateStr}</span></div>
+            <div style="font-size:0.8rem; color:#666; margin-bottom:6px;"><i class="fa-regular fa-envelope"></i> <a href="mailto:${m.email}" style="color:#d4af37; text-decoration:none;">${m.email}</a></div>
+            <div style="font-size:0.85rem; line-height:1.4;">${m.message}</div>
+          </div>
+          `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    listDiv.innerHTML = "<div style='text-align:center; color:#f44336; padding:20px;'>Bildirimler yüklenemedi.</div>";
   }
-
-  if (messages.length === 0) {
-    listDiv.innerHTML = "<div style='text-align:center; color:#888; padding:20px;'>Henüz mesaj yok.</div>";
-    return;
-  }
-
-  listDiv.innerHTML = messages.map(m => {
-    const bg = m.isRead ? "transparent" : "#fffcf2";
-    return `
-      <div style="padding:15px; border-bottom:1px solid #eee; background:${bg};">
-        <div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">${m.name} <span style="font-weight:400; font-size:0.75rem; color:#888; float:right;">${m.date}</span></div>
-        <div style="font-size:0.8rem; color:#666; margin-bottom:6px;"><i class="fa-regular fa-envelope"></i> <a href="mailto:${m.email}" style="color:#d4af37; text-decoration:none;">${m.email}</a></div>
-        <div style="font-size:0.85rem; line-height:1.4;">${m.message}</div>
-      </div>
-      `;
-  }).join('');
 };
 
-window.markAllMessagesRead = function () {
-  let messages = [];
+window.markAllMessagesRead = async function () {
   try {
-    messages = JSON.parse(localStorage.getItem("hk_messages_db")) || [];
-  } catch (e) { }
+    const { error } = await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('is_read', false);
 
-  messages.forEach(m => m.isRead = true);
-  localStorage.setItem("hk_messages_db", JSON.stringify(messages));
-  loadAdminNotifications();
-  showLocalToast('Tüm mesajlar okundu olarak işaretlendi.');
+    if (error) throw error;
+
+    loadAdminNotifications();
+    showLocalToast('Tüm mesajlar okundu olarak işaretlendi.');
+  } catch (err) {
+    console.error(err);
+    showLocalToast('Bir hata oluştu.', true);
+  }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -657,91 +714,100 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-window.loadAdminAppointments = function () {
+window.loadAdminAppointments = async function () {
   const container = document.getElementById("admin-appointments-list");
   const containerAll = document.getElementById("all-appointments-list");
 
   if (!container && !containerAll) return;
 
-  let appointments = [];
   try {
-    appointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
-  } catch (e) { }
+    const { data: appointments, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  const pendingApps = appointments.filter(a => a.status === 'pending');
-  const pendingCount = pendingApps.length;
-  let expectedRevenue = 0;
+    if (error) throw error;
 
-  pendingApps.forEach(app => {
-    if (app.price) {
-      expectedRevenue += parseInt(app.price.replace(/\D/g, '') || "0");
+    const safeApps = appointments || [];
+    const pendingApps = safeApps.filter(a => a.status === 'pending');
+    const pendingCount = pendingApps.length;
+    let expectedRevenue = 0;
+
+    pendingApps.forEach(app => {
+      if (app.price) {
+        expectedRevenue += parseInt(app.price.replace(/\D/g, '') || "0");
+      }
+    });
+
+    const revenueEl = document.getElementById("admin-daily-revenue");
+    const dailyAppsEl = document.getElementById("admin-daily-appointments");
+
+    if (revenueEl) revenueEl.textContent = expectedRevenue.toLocaleString('tr-TR');
+    if (dailyAppsEl) dailyAppsEl.textContent = pendingCount;
+
+    const statInfoEl = document.querySelectorAll('.stat-card__info');
+    statInfoEl.forEach(el => {
+      const titleEl = el.querySelector('h4');
+      if (titleEl && titleEl.textContent.includes('Onay Bekleyen')) {
+        const valEl = el.querySelector('p');
+        if (valEl) valEl.textContent = pendingCount;
+      }
+    });
+
+    if (safeApps.length === 0) {
+      const emptyRow = '<tr><td colspan="5" style="text-align:center; padding: 30px;">Henüz randevu talebi yok.</td></tr>';
+      if (container) container.innerHTML = emptyRow;
+      if (containerAll) containerAll.innerHTML = emptyRow;
+      return;
     }
-  });
 
-  const revenueEl = document.getElementById("admin-daily-revenue");
-  const dailyAppsEl = document.getElementById("admin-daily-appointments");
+    const generatedHtml = safeApps.map((app, index) => {
+      const statusText = app.status === 'approved' ? '<span class="badge approved">Onaylandı</span>' :
+        (app.status === 'rejected' ? '<span class="badge rejected">Reddedildi</span>' : '<span class="badge pending">Bekliyor</span>');
 
-  if (revenueEl) revenueEl.textContent = expectedRevenue.toLocaleString('tr-TR');
-  if (dailyAppsEl) dailyAppsEl.textContent = pendingCount;
+      const actions = app.status === 'pending' ? `
+          <button class="btn btn--sm" style="background:#4caf50; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.8rem;" onclick="updateAppointmentStatus('${app.id}', 'approved')"><i class="fa-solid fa-check"></i> Onayla</button>
+          <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.8rem;" onclick="updateAppointmentStatus('${app.id}', 'rejected')"><i class="fa-solid fa-times"></i> Reddet</button>
+        ` : `<span style="font-size:0.85rem; color:#888;">İşlem Yapıldı</span>`;
 
-  const statInfoEl = document.querySelectorAll('.stat-card__info');
-  statInfoEl.forEach(el => {
-    const titleEl = el.querySelector('h4');
-    if (titleEl && titleEl.textContent.includes('Onay Bekleyen')) {
-      const valEl = el.querySelector('p');
-      if (valEl) valEl.textContent = pendingCount;
-    }
-  });
+      return `
+          <tr>
+            <td><strong>${app.user_name}</strong><br><span style="font-size:0.85rem; color:#666;">${app.service} (${app.expert})</span></td>
+            <td>${app.date}</td>
+            <td>${app.time}</td>
+            <td>${statusText}</td>
+            <td style="display:flex; gap:8px;">${actions}</td>
+          </tr>
+        `;
+    }).join('');
 
-  if (appointments.length === 0) {
-    const emptyRow = '<tr><td colspan="5" style="text-align:center; padding: 30px;">Henüz randevu talebi yok.</td></tr>';
-    if (container) container.innerHTML = emptyRow;
-    if (containerAll) containerAll.innerHTML = emptyRow;
-    return;
+    if (container) container.innerHTML = generatedHtml;
+    if (containerAll) containerAll.innerHTML = generatedHtml;
+
+  } catch (err) {
+    console.error(err);
+    if (container) container.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Veriler yüklenirken hata oluştu!</td></tr>';
   }
-
-  const generatedHtml = appointments.map((app, index) => {
-    const statusText = app.status === 'approved' ? '<span class="badge approved">Onaylandı</span>' :
-      (app.status === 'rejected' ? '<span class="badge rejected">Reddedildi</span>' : '<span class="badge pending">Bekliyor</span>');
-
-    const actions = app.status === 'pending' ? `
-      <button class="btn btn--sm" style="background:#4caf50; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.8rem;" onclick="updateAppointmentStatus('${app.id}', 'approved')"><i class="fa-solid fa-check"></i> Onayla</button>
-      <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.8rem;" onclick="updateAppointmentStatus('${app.id}', 'rejected')"><i class="fa-solid fa-times"></i> Reddet</button>
-    ` : `<span style="font-size:0.85rem; color:#888;">İşlem Yapıldı</span>`;
-
-    return `
-      <tr>
-        <td><strong>${app.userName}</strong><br><span style="font-size:0.85rem; color:#666;">${app.service} (${app.expert})</span></td>
-        <td>${app.date}</td>
-        <td>${app.time}</td>
-        <td>${statusText}</td>
-        <td style="display:flex; gap:8px;">${actions}</td>
-      </tr>
-    `;
-  }).join('');
-
-  if (container) container.innerHTML = generatedHtml;
-  if (containerAll) containerAll.innerHTML = generatedHtml;
 };
 
-window.updateAppointmentStatus = function (id, newStatus) {
-  let appointments = [];
+window.updateAppointmentStatus = async function (id, newStatus) {
   try {
-    appointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
-  } catch (e) { }
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: newStatus })
+      .eq('id', id);
 
-  const index = appointments.findIndex(a => a.id === id);
-  if (index !== -1) {
-    appointments[index].status = newStatus;
-    localStorage.setItem("hk_appointments_db", JSON.stringify(appointments));
+    if (error) throw error;
 
     loadAdminAppointments();
-
     if (newStatus === 'approved') {
       showLocalToast('Randevu onaylandı.');
     } else {
       showLocalToast('Randevu reddedildi.', true);
     }
+  } catch (err) {
+    console.error(err);
+    showLocalToast('Durum güncellenirken bir hata oluştu.', true);
   }
 };
 

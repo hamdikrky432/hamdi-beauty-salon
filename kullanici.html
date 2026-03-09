@@ -5,21 +5,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kullanıcı Paneli | HAMDİ KARAKAYA BEAUTY</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
     rel="stylesheet">
-  
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body class="page page--dashboard">
 
-  
+
   <header class="site-header" style="background: #fff; padding: 12px 0;">
     <div class="container site-header__inner" style="max-width: 1400px;">
       <a href="index.html" class="brand">
@@ -36,7 +36,7 @@
   </header>
 
   <div class="container main-with-sidebar" style="max-width: 1400px;">
-    
+
     <aside class="sidebar reveal">
       <div class="sidebar-user">
         <div class="sidebar-user__avatar">
@@ -61,10 +61,10 @@
       </nav>
     </aside>
 
-    
+
     <main class="content reveal reveal-delay-1">
 
-      
+
       <section id="panel-dashboard" class="panel active">
         <div class="panel-header">
           <div>
@@ -101,11 +101,11 @@
 
         <h3 style="margin-bottom:16px; font-size:1.4rem;">Yaklaşan Onaylı Randevu / Son Randevular</h3>
         <div id="user-upcoming-appointments">
-          
+
         </div>
       </section>
 
-      
+
       <section id="panel-appointments" class="panel">
         <div class="panel-header">
           <div>
@@ -117,11 +117,11 @@
               class="fa-solid fa-plus"></i> Randevu Al</button>
         </div>
         <div class="appointment-list" id="user-all-appointments-list">
-          
+
         </div>
       </section>
 
-      
+
       <section id="panel-new-booking" class="panel">
         <div class="panel-header">
           <div>
@@ -187,7 +187,7 @@
         </form>
       </section>
 
-      
+
       <section id="panel-reports" class="panel">
         <div class="panel-header">
           <div>
@@ -195,7 +195,7 @@
             <p class="panel-desc">Salonda daha önce yaptırdığınız işlemleri görüntüleyin.</p>
           </div>
         </div>
-        
+
         <div style="text-align:center; padding: 60px 0;">
           <i class="fa-solid fa-clock-rotate-left"
             style="font-size: 3rem; color: var(--color-border-subtle); margin-bottom: 20px;"></i>
@@ -203,7 +203,7 @@
         </div>
       </section>
 
-      
+
       <section id="panel-profile" class="panel">
         <div class="panel-header">
           <div>
@@ -226,12 +226,14 @@
     </main>
   </div>
 
-  
+
   <div id="appToast" class="toast">
     <i class="fa-solid fa-circle-check"></i>
     <span id="toastMsg">İşlem başarılı.</span>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
 </body>
 
