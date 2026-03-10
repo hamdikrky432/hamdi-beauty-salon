@@ -112,6 +112,27 @@ window.handleLogin = async function (event) {
     btn.disabled = true;
 
     try {
+        // Admin Girişi (Hardcoded Bypass)
+        if (email === "admin@hamdibeauty.com" || email === "admin@example.com") {
+            if (password !== "admin123" && password !== "admin") {
+                showLocalToast("Hatalı yönetici şifresi.", true);
+                throw new Error("Hatalı yönetici şifresi.");
+            }
+            localStorage.setItem("hk_auth_user", JSON.stringify({
+                name: "Yönetici",
+                role: "admin",
+                email: email,
+                id: "admin-local"
+            }));
+            if (rememberCheckbox && rememberCheckbox.checked) {
+                localStorage.setItem("hk_remember_user", JSON.stringify({ email, password }));
+            } else {
+                localStorage.removeItem("hk_remember_user");
+            }
+            window.location.href = "admin.html";
+            return;
+        }
+
         // Supabase ile Giriş
         const { data, error } = await supabase.auth.signInWithPassword({
             email: email,
