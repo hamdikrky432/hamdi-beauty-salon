@@ -96,24 +96,47 @@ window.handleRegister = async function (event) {
 
 // Giriş Yap (Login)
 window.handleLogin = async function (event) {
-    event.preventDefault();
+    console.log("handleLogin tetiklendi");
+
+    // Güvence için tekrar preventDefault ve stopPropagation
+    if (event) {
+        event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+    }
+
     const emailInput = document.getElementById("email");
     const passwordInput = document.getElementById("password");
     const rememberCheckbox = document.getElementById("rememberMe");
 
-    if (!emailInput || !passwordInput) return;
+    if (!emailInput || !passwordInput) {
+        console.error("Email veya şifre inputu bulunamadı.");
+        return;
+    }
 
     const email = emailInput.value.trim().toLowerCase();
     const password = passwordInput.value;
-    const btn = event.target.querySelector('button[type="submit"]');
-    const originalText = btn.innerHTML;
 
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Giriş Yapılıyor...';
-    btn.disabled = true;
+    // Submit butonunu event.target üzerinden veya direkt dokümandan bul
+    let btn = null;
+    if (event && event.target && event.target.querySelector) {
+        btn = event.target.querySelector('button[type="submit"]');
+    }
+    if (!btn) {
+        btn = document.querySelector('button[type="submit"]');
+    }
+
+    const originalText = btn ? btn.innerHTML : "Giriş Yap";
+
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Giriş Yapılıyor...';
+        btn.disabled = true;
+    }
 
     try {
+        console.log("Admin bypass kontrol ediliyor...");
         // Admin Girişi (Hardcoded Bypass)
         if (email === "admin@hamdibeauty.com" || email === "admin@example.com") {
+            console.log("Admin emaili tespit edildi.");
             if (password !== "admin123" && password !== "admin") {
                 showLocalToast("Hatalı yönetici şifresi.", true);
                 throw new Error("Hatalı yönetici şifresi.");
@@ -129,11 +152,17 @@ window.handleLogin = async function (event) {
             } else {
                 localStorage.removeItem("hk_remember_user");
             }
-            window.location.href = "admin.html";
+            console.log("Admin girişi başarılı, yönlendiriliyor...");
+            window.location.replace("admin.html");
             return;
         }
 
+        console.log("Supabase ile giriş deneniyor...");
         // Supabase ile Giriş
+        if (!supabase || !supabase.auth) {
+            throw new Error("Supabase client yüklenmemiş veya auth modülü yok.");
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
             email: email,
             password: password,
@@ -143,6 +172,7 @@ window.handleLogin = async function (event) {
             console.error("Giriş Hatası:", error.message);
             showLocalToast("Hatalı e-posta veya şifre girdiniz.", true);
         } else {
+            console.log("Supabase girişi başarılı.");
             // Başarılı giriş
             const user = data.user;
             const firstName = user.user_metadata?.first_name || '';
@@ -163,15 +193,17 @@ window.handleLogin = async function (event) {
                 localStorage.removeItem("hk_remember_user");
             }
 
-            // Normal kullanıcıyı hesaba sok
-            window.location.href = role === "admin" ? "admin.html" : "kullanici.html";
+            console.log(`Normal kullanıcı girişi, role: ${role}. Yönlendiriliyor...`);
+            window.location.replace(role === "admin" ? "admin.html" : "kullanici.html");
         }
     } catch (err) {
         showLocalToast("Giriş yapılırken bir hata oluştu.", true);
-        console.error(err);
+        console.error("try-catch içi hata fırlatıldı:", err);
     } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 };
 
@@ -220,8 +252,9 @@ window.checkAuthState = async function () {
     }
 
     // Korunan sayfa kontrolü
-    if (!userJson && (path.includes("kullanici.html") || path.includes("admin.html") || path.includes("dashboard.html"))) {
-        window.location.href = "login.html";
+    const isProtected = path.includes("kullanici.html") || path.includes("admin.html") || path.includes("dashboard.html");
+    if (!userJson && isProtected) {
+        window.location.replace("login.html");
         return;
     }
 
@@ -230,7 +263,7 @@ window.checkAuthState = async function () {
         try {
             const user = JSON.parse(userJson);
             // Sadece register sayfasından login'e geldiğinde bile admin.html/index.html yönlendirmesi çalışmalı
-            window.location.href = user.role === "admin" ? "admin.html" : "kullanici.html";
+            window.location.replace(user.role === "admin" ? "admin.html" : "kullanici.html");
             return;
         } catch (e) { }
     }
@@ -286,6 +319,8 @@ window.checkAuthState = async function () {
     }
 };
 
+// Doğrudan çağır, script yüklendiğinde çalışsın (Fakat DOM yüklendikten sonra UI işlenmesi için beklet)
 document.addEventListener("DOMContentLoaded", () => {
     window.checkAuthState();
+    console.log("Supabase logic initialized");
 });

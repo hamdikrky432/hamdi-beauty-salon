@@ -252,7 +252,8 @@
           </div>
           <div class="contact-form-wrap">
             <h3>Hızlı Mesaj Bırakın</h3>
-            <form class="form" id="contactForm" onsubmit="handleContactForm(event)">
+            <form class="form" id="contactForm"
+              onsubmit="if(typeof handleContactForm === 'function') { handleContactForm(event); } return false;">
               <div class="form-field">
                 <input type="text" id="c-name" class="form-field__input" placeholder=" " required>
                 <label for="c-name" class="form-field__label">Adınız Soyadınız</label>
@@ -268,77 +269,71 @@
               <button type="submit" class="btn btn--primary">Mesajı Gönder</button>
             </form>
           </div>
-        </div>
-      </div>
-    </section>
+          <div class="container">
+            <div class="footer-grid">
+              <div class="footer-brand">
+                <a href="index.html" class="brand">
+                  <span class="brand__mark">HK</span>
+                  <span class="brand__text">HAMDİ KARAKAYA <span>BEAUTY</span></span>
+                </a>
+                <p>Uluslararası standartlarda premium güzellik ve bakım deneyimi. Kendinizi özel hissetmek için doğru
+                  adrestesiniz.</p>
+              </div>
+              <div class="footer-col">
+                <h4>Hızlı Menü</h4>
+                <div class="footer-links">
+                  <a href="#about">Hakkımızda</a>
+                  <a href="#services">Hizmetlerimiz</a>
+                  <a href="#team">Uzmanlarımız</a>
+                  <a href="#gallery">Galeri</a>
+                </div>
+              </div>
+              <div class="footer-col">
+                <h4>Sistem</h4>
+                <div class="footer-links">
+                  <a href="login.html">Kullanıcı Girişi</a>
+                  <a href="kullanici.html">Randevu Paneli</a>
+                  <a href="#">Sıkça Sorulan Sorular</a>
+                  <a href="#">Aydınlatma Metni</a>
+                </div>
+              </div>
+              <div class="footer-col">
+                <h4>Instagram'da Ben</h4>
+                <p style="color: rgba(255,255,255,0.6); margin-bottom: 12px; font-size: 0.9rem;">En yeni saç tasarımları
+                  ve
+                  cilt bakım tüyoları için beni takip edin.</p>
+                <div class="social-links">
+                  <a href="https://www.instagram.com/hamdikrky43" target="_blank"><i
+                      class="fa-brands fa-instagram"></i></a>
+                  <a href="https://www.tiktok.com/@hamdikrky43" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
+                  <a href="#"><i class="fa-brands fa-youtube"></i></a>
+                  <a href="https://api.whatsapp.com/send?phone=905515057480&text=Merhaba,%20randevu%20almak%20istiyorum."
+                    target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+                </div>
+              </div>
+            </div>
+            <div class="footer-bottom">
+              <p>&copy; 2026 HAMDİ KARAKAYA BEAUTY. Tüm Hakları Saklıdır.</p>
 
-  </main>
-
-
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <a href="index.html" class="brand">
-            <span class="brand__mark">HK</span>
-            <span class="brand__text">HAMDİ KARAKAYA <span>BEAUTY</span></span>
-          </a>
-          <p>Uluslararası standartlarda premium güzellik ve bakım deneyimi. Kendinizi özel hissetmek için doğru
-            adrestesiniz.</p>
-        </div>
-        <div class="footer-col">
-          <h4>Hızlı Menü</h4>
-          <div class="footer-links">
-            <a href="#about">Hakkımızda</a>
-            <a href="#services">Hizmetlerimiz</a>
-            <a href="#team">Uzmanlarımız</a>
-            <a href="#gallery">Galeri</a>
+            </div>
           </div>
-        </div>
-        <div class="footer-col">
-          <h4>Sistem</h4>
-          <div class="footer-links">
-            <a href="login.html">Kullanıcı Girişi</a>
-            <a href="kullanici.html">Randevu Paneli</a>
-            <a href="#">Sıkça Sorulan Sorular</a>
-            <a href="#">Aydınlatma Metni</a>
+          </footer>
+
+          <div id="appToast" class="toast">
+            <i class="fa-solid fa-circle-check"></i>
+            <span id="toastMsg">İşlem başarılı.</span>
           </div>
-        </div>
-        <div class="footer-col">
-          <h4>Instagram'da Ben</h4>
-          <p style="color: rgba(255,255,255,0.6); margin-bottom: 12px; font-size: 0.9rem;">En yeni saç tasarımları ve
-            cilt bakım tüyoları için beni takip edin.</p>
-          <div class="social-links">
-            <a href="https://www.instagram.com/hamdikrky43" target="_blank"><i class="fa-brands fa-instagram"></i></a>
-            <a href="https://www.tiktok.com/@hamdikrky43" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
-            <a href="#"><i class="fa-brands fa-youtube"></i></a>
-            <a href="https://api.whatsapp.com/send?phone=905515057480&text=Merhaba,%20randevu%20almak%20istiyorum."
-              target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+
+
+          <div id="lightbox" class="lightbox">
+            <span class="lightbox-close">&times;</span>
+            <img class="lightbox-content" id="lightbox-img">
           </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; 2026 HAMDİ KARAKAYA BEAUTY. Tüm Hakları Saklıdır.</p>
-
-      </div>
-    </div>
-  </footer>
-
-  <div id="appToast" class="toast">
-    <i class="fa-solid fa-circle-check"></i>
-    <span id="toastMsg">İşlem başarılı.</span>
-  </div>
 
 
-  <div id="lightbox" class="lightbox">
-    <span class="lightbox-close">&times;</span>
-    <img class="lightbox-content" id="lightbox-img">
-  </div>
-
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/main.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+          <script src="js/supabase.js"></script>
+          <script src="js/main.js"></script>
 </body>
 
 </html>
