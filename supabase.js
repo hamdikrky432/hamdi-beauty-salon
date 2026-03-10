@@ -163,7 +163,8 @@ window.handleLogin = async function (event) {
                 localStorage.removeItem("hk_remember_user");
             }
 
-            window.location.href = role === "admin" ? "admin.html" : "index.html";
+            // Normal kullanıcıyı hesaba sok
+            window.location.href = role === "admin" ? "admin.html" : "kullanici.html";
         }
     } catch (err) {
         showLocalToast("Giriş yapılırken bir hata oluştu.", true);
@@ -228,7 +229,8 @@ window.checkAuthState = async function () {
     if (userJson && isAuthPage) {
         try {
             const user = JSON.parse(userJson);
-            window.location.href = user.role === "admin" ? "admin.html" : "index.html";
+            // Sadece register sayfasından login'e geldiğinde bile admin.html/index.html yönlendirmesi çalışmalı
+            window.location.href = user.role === "admin" ? "admin.html" : "kullanici.html";
             return;
         } catch (e) { }
     }
