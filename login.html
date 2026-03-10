@@ -140,7 +140,7 @@
                     <p>Hesabınıza giriş yaparak randevularınızı yönetin.</p>
                 </div>
 
-                <form class="form" onsubmit="handleLogin(event)">
+                <form class="form" onsubmit="handleLogin(event); return false;">
                     <div class="form-field">
                         <input type="email" id="email" class="form-field__input" placeholder=" " required>
                         <label for="email" class="form-field__label"><i class="fa-regular fa-envelope"></i> E-posta
