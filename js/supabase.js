@@ -143,32 +143,7 @@ window.handleLogin = async function (e) {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Giriş Yapılıyor...';
         btn.disabled = true;
     }
-
     try {
-        console.log("Admin bypass kontrol ediliyor...");
-
-        if (email === "admin@hamdibeauty.com" || email === "admin@example.com") {
-            console.log("Admin emaili tespit edildi.");
-            if (password !== "admin123" && password !== "admin") {
-                showLocalToast("Hatalı yönetici şifresi.", true);
-                throw new Error("Hatalı yönetici şifresi.");
-            }
-            localStorage.setItem("hk_auth_user", JSON.stringify({
-                name: "Yönetici",
-                role: "admin",
-                email: email,
-                id: "admin-local"
-            }));
-            if (rememberCheckbox && rememberCheckbox.checked) {
-                localStorage.setItem("hk_remember_user", JSON.stringify({ email, password }));
-            } else {
-                localStorage.removeItem("hk_remember_user");
-            }
-            console.log("Admin girişi başarılı, yönlendiriliyor...");
-            window.location.replace("admin.html");
-            return;
-        }
-
         console.log("Supabase ile giriş deneniyor...");
 
         if (!window.supabaseClient || !window.supabaseClient.auth) {
@@ -183,7 +158,27 @@ window.handleLogin = async function (e) {
         if (error) {
             console.error("Giriş Hatası:", error.message);
 
+            // ADMIN FALLBACK (Eğer Supabase'de admin tanımlı değilse ama giriş yapılmak isteniyorsa)
+            if (email === "admin@hamdibeauty.com" || email === "admin@example.com") {
+                if (password === "admin123" || password === "admin") {
+                    console.warn("Supabase auth başarısız ama lokal Admin Bypass aktif!");
+                    localStorage.setItem("hk_auth_user", JSON.stringify({
+                        name: "Yönetici",
+                        role: "admin",
+                        email: email,
+                        id: "admin-local"
+                    }));
+                    if (rememberCheckbox && rememberCheckbox.checked) {
+                        localStorage.setItem("hk_remember_user", JSON.stringify({ email, password }));
+                    } else {
+                        localStorage.removeItem("hk_remember_user");
+                    }
+                    window.location.replace("admin.html");
+                    return;
+                }
+            }
 
+            // USER FALLBACK
             let users = [];
             try { users = JSON.parse(localStorage.getItem("hk_users_db")) || []; } catch (e) { }
             const localUser = users.find(u => u.email === email && u.password === password);
@@ -209,7 +204,7 @@ window.handleLogin = async function (e) {
                 return;
             }
 
-
+            // NE ADMIN NE DE LOCAL USER BULUNAMADI
             showLocalToast("Hatalı e-posta veya şifre girdiniz.", true);
         } else {
             console.log("Supabase girişi başarılı.");
@@ -217,8 +212,12 @@ window.handleLogin = async function (e) {
             const user = data.user;
             const firstName = user.user_metadata?.first_name || '';
             const lastName = user.user_metadata?.last_name || '';
-            const role = user.user_metadata?.role || 'user';
-
+            
+            // Eğer Supabase'de manuel admin yetkisi verdiyse veya bypass emailini kullandıysa
+            let role = user.user_metadata?.role || 'user';
+            if (email === "admin@hamdibeauty.com" || email === "admin@example.com") {
+                role = "admin"; // Zorla admin yap
+            }
 
             localStorage.setItem("hk_auth_user", JSON.stringify({
                 name: (firstName + " " + lastName).trim() || "Kullanıcı",
