@@ -138,8 +138,7 @@
                     <p>Yeni bir hesap oluşturarak ayrıcalıklara erişin.</p>
                 </div>
 
-                <form class="form" onsubmit="handleRegister(event); return false;">
-
+                <form class="form" id="registerForm" onsubmit="return window.handleRegister(event);">
                     <div class="grid-2">
                         <div class="form-field">
                             <input type="text" id="fname" class="form-field__input" placeholder=" " required>
@@ -198,8 +197,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/supabase.js?v=5"></script>
+    <script src="js/main.js?v=5"></script>
+
+
 </body>
 
 </html>

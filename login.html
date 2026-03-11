@@ -140,7 +140,7 @@
                     <p>Hesabınıza giriş yaparak randevularınızı yönetin.</p>
                 </div>
 
-                <form class="form" onsubmit="handleLogin(event); return false;">
+                <form class="form" id="loginForm" onsubmit="return window.handleLogin(event);">
                     <div class="form-field">
                         <input type="email" id="email" class="form-field__input" placeholder=" " required>
                         <label for="email" class="form-field__label"><i class="fa-regular fa-envelope"></i> E-posta
@@ -175,10 +175,12 @@
         </div>
     </div>
 
+    <!-- Supabase Core -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase.js"></script>
-    <!-- Gerekirse UI efektleri için main.js de kalabilir -->
-    <script src="js/main.js"></script>
+    <script src="js/supabase.js?v=5"></script>
+    <script src="js/main.js?v=5"></script>
+
+
 </body>
 
 </html>

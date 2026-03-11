@@ -269,9 +269,14 @@
               <button type="submit" class="btn btn--primary">Mesajı Gönder</button>
             </form>
           </div>
-          <div class="container">
-            <div class="footer-grid">
-              <div class="footer-brand">
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
                 <a href="index.html" class="brand">
                   <span class="brand__mark">HK</span>
                   <span class="brand__text">HAMDİ KARAKAYA <span>BEAUTY</span></span>
@@ -332,8 +337,49 @@
 
 
           <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-          <script src="js/supabase.js"></script>
-          <script src="js/main.js"></script>
+          <script src="js/supabase.js?v=5"></script>
+          <script src="js/main.js?v=5"></script>
+
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              try {
+                const userObj = JSON.parse(localStorage.getItem('hk_auth_user'));
+                if (userObj) {
+                  const targetUrl = userObj.role === 'admin' ? 'admin.html' : 'kullanici.html';
+                  
+                  // Update Hero Button
+                  const heroBtn = document.querySelector('.hero__actions a.btn--gold');
+                  if (heroBtn) {
+                    heroBtn.href = targetUrl;
+                  }
+
+                  // Update Services CTA Button
+                  const servicesBtn = document.querySelector('#services .btn--primary');
+                  if (servicesBtn) {
+                    servicesBtn.href = targetUrl;
+                  }
+                  // Replace Contact form with Quick Notes for Admins
+                  if (userObj.role === 'admin') {
+                    const contactWrap = document.querySelector('.contact-form-wrap');
+                    if (contactWrap) {
+                      contactWrap.innerHTML = `
+                        <h3>Hızlı Notlar / Yapılacaklar</h3>
+                        <div id="admin-notes-list" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
+                        <form class="form" onsubmit="event.preventDefault(); window.saveAdminNote();">
+                          <div class="form-field" style="margin-bottom: 15px;">
+                            <input type="text" id="admin-new-note" class="form-field__input" placeholder=" " required>
+                            <label for="admin-new-note" class="form-field__label" style="background:#fff; padding:0 5px;">Yeni Not Ekle...</label>
+                          </div>
+                          <button type="submit" class="btn btn--primary" style="width: 100%; padding: 12px;"><i class="fa-solid fa-plus"></i> Notu Kaydet</button>
+                        </form>
+                      `;
+                      if (typeof window.loadAdminNotes === 'function') window.loadAdminNotes();
+                    }
+                  }
+                }
+              } catch(e) {}
+            });
+          </script>
 </body>
 
 </html>

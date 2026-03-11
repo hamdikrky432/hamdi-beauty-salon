@@ -43,7 +43,7 @@
           <i class="fa-solid fa-user-tie" style="font-size: 2rem;"></i>
         </div>
         <div class="sidebar-user__info">
-          <h3>Hoş Geldiniz, <span class="dynamic-user-name">Gizem</span></h3>
+          <h3>Hoş Geldiniz, <span class="dynamic-user-name"></span></h3>
           <p>VIP Üye</p>
         </div>
       </div>
@@ -146,13 +146,13 @@
               </div>
               <div class="form-field">
                 <select id="book-service" name="service" class="form-field__input" required>
-                  <option value="" disabled selected>Alt Hizmet Seçin</option>
-                  <option value="Keratin Bakımı">Keratin Bakımı</option>
-                  <option value="Balyaj / Ombre">Balyaj / Ombre</option>
-                  <option value="Medikal Manikür">Medikal Manikür</option>
-                  <option value="Altın İğne">Altın İğne</option>
-                  <option value="HydraFacial">HydraFacial</option>
-                  <option value="Saç Kesimi">Saç Kesimi</option>
+                  <option value="" disabled selected data-price="0">Alt Hizmet Seçin</option>
+                  <option value="Keratin Bakımı" data-price="2200">Keratin Bakımı</option>
+                  <option value="Balyaj / Ombre" data-price="3500">Balyaj / Ombre</option>
+                  <option value="Medikal Manikür" data-price="650">Medikal Manikür</option>
+                  <option value="Altın İğne" data-price="4500">Altın İğne</option>
+                  <option value="HydraFacial" data-price="1800">HydraFacial</option>
+                  <option value="Saç Kesimi" data-price="850">Saç Kesimi</option>
                 </select>
                 <label class="form-field__label">İşlem</label>
               </div>
@@ -233,8 +233,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/supabase.js?v=5"></script>
+  <script src="js/main.js?v=5"></script>
 </body>
 
 </html>
