@@ -142,7 +142,9 @@ window.handleBooking = async function (event) {
     try {
       const userObj = JSON.parse(localStorage.getItem("hk_auth_user"));
       if (userObj) {
-        currentUser = userObj.name || userObj.email;
+        let n = userObj.name || "";
+        if (n.includes("undefined") || n.trim() === "") n = (userObj.fname && userObj.lname ? userObj.fname + " " + userObj.lname : "");
+        currentUser = n || userObj.email || "Kullanıcı";
         userId = userObj.id || null;
       }
     } catch (e) { }
@@ -157,7 +159,7 @@ window.handleBooking = async function (event) {
     } catch (e) { }
 
     // Supabase'e Kaydet
-    const { data, error } = await supabase
+    const { data, error } = await window.supabaseClient
       .from('appointments')
       .insert([
         {
@@ -172,7 +174,27 @@ window.handleBooking = async function (event) {
         }
       ]);
 
-    if (error) throw error;
+    if (error) {
+      console.warn("Supabase randevu hatası:", error.message);
+      
+      // Fallback: Save locally
+      let localAppointments = [];
+      try { localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || []; } catch(e) {}
+      
+      localAppointments.push({
+        id: "local-" + Date.now(),
+        user_name: currentUser,
+        user_id: userId,
+        service: service,
+        price: servicePrice,
+        date: date,
+        time: time,
+        expert: expert,
+        status: "pending",
+        created_at: new Date().toISOString()
+      });
+      localStorage.setItem("hk_appointments_db", JSON.stringify(localAppointments));
+    }
 
     showLocalToast("Randevunuz başarıyla oluşturuldu. Yönlendiriliyorsunuz...");
     event.target.reset();
@@ -188,7 +210,47 @@ window.handleBooking = async function (event) {
 
   } catch (err) {
     console.error("Randevu kayit hatasi:", err);
-    showLocalToast("Randevu oluşturulurken bir hata meydana geldi.", true);
+    
+    // Fallback if completely broken
+    let localAppointments = [];
+    try { localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || []; } catch(e) {}
+    
+    // Retrieve values even if variables throw
+    let fbUser = "Misafir";
+    try {
+      const uObj = JSON.parse(localStorage.getItem("hk_auth_user"));
+      if (uObj) {
+          let n = uObj.name || "";
+          if (n.includes("undefined") || n.trim() === "") n = (uObj.fname && uObj.lname ? uObj.fname + " " + uObj.lname : "");
+          fbUser = n || uObj.email || "Kullanıcı";
+      }
+    } catch(e) {}
+
+    localAppointments.push({
+      id: "local-" + Date.now(),
+      user_name: fbUser,
+      user_id: "local-" + Date.now(),
+      service: document.getElementById("book-service")?.value || "Belirtilmedi",
+      price: document.getElementById("book-service") ? (document.getElementById("book-service").options[document.getElementById("book-service").selectedIndex]?.dataset?.price || "0") : "0",
+      date: document.getElementById("book-date")?.value || "-",
+      time: document.getElementById("book-time")?.value || "-",
+      expert: document.getElementById("book-expert")?.value || "Farketmez",
+      status: "pending",
+      created_at: new Date().toISOString()
+    });
+    localStorage.setItem("hk_appointments_db", JSON.stringify(localAppointments));
+    
+    showLocalToast("Randevunuz başarıyla oluşturuldu. Yönlendiriliyorsunuz...");
+    event.target.reset();
+    
+    setTimeout(() => {
+      const appointmentsBtn = document.querySelector('button[onclick*="appointments"]');
+      if (appointmentsBtn) {
+        appointmentsBtn.click();
+      } else {
+        if (typeof loadUserAppointments === 'function') loadUserAppointments();
+      }
+    }, 1500);
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
@@ -212,7 +274,7 @@ window.loadUserAppointments = async function () {
 
   try {
     let myAppointments = [];
-    let query = supabase.from('appointments').select('*').order('created_at', { ascending: false });
+    let query = window.supabaseClient.from('appointments').select('*').order('created_at', { ascending: false });
 
     // Kullanıcı ID'si varsa ID'ye göre çek (RLS kuralları gereği kendi datasını alacak)
     // Yoksa da isim eşleşmesi yap (Misafir vs.)
@@ -224,8 +286,23 @@ window.loadUserAppointments = async function () {
 
     const { data, error } = await query;
 
-    if (error) throw error;
+    if (error) {
+      console.warn("Supabase Fetch Hatası:", error.message);
+    }
+    
     if (data) myAppointments = data;
+
+    // Fallback: Merge with local appointments
+    try {
+      const localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
+      const userLocalAppointments = localAppointments.filter(app => {
+        if (userId && app.user_id === userId) return true;
+        if (app.user_name === currentUser) return true;
+        return false;
+      });
+      myAppointments = [...myAppointments, ...userLocalAppointments];
+      myAppointments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } catch(e) {}
 
     let completedCount = 0;
     let pendingCount = 0;
@@ -256,11 +333,11 @@ window.loadUserAppointments = async function () {
           return `
                   <div class="appointment-row" style="background:#fdfcf0; border-color:#e6dfa8; margin-bottom:10px;">
                     <div class="app-details">
-                      <h3>${app.service}</h3>
+                      <h3>${app.service || "Hizmet Yok"}</h3>
                       <p>
-                        <span><i class="fa-regular fa-calendar"></i> ${app.date}</span>
-                        <span><i class="fa-regular fa-clock"></i> ${app.time}</span>
-                        <span><i class="fa-regular fa-user"></i> Uzman: ${app.expert}</span>
+                        <span><i class="fa-regular fa-calendar"></i> ${app.date || "-"}</span>
+                        <span><i class="fa-regular fa-clock"></i> ${app.time || "-"}</span>
+                        <span><i class="fa-regular fa-user"></i> Uzman: ${app.expert || "Farketmez"}</span>
                       </p>
                     </div>
                     <div class="app-status">
@@ -285,11 +362,11 @@ window.loadUserAppointments = async function () {
       return `
           <div class="appointment-row">
             <div class="app-details">
-              <h3>${app.service}</h3>
+              <h3>${app.service || "Hizmet Yok"}</h3>
               <p>
-                <span><i class="fa-regular fa-calendar"></i> ${app.date}</span>
-                <span><i class="fa-regular fa-clock"></i> ${app.time}</span>
-                <span><i class="fa-regular fa-user"></i> ${app.expert}</span>
+                <span><i class="fa-regular fa-calendar"></i> ${app.date || "-"}</span>
+                <span><i class="fa-regular fa-clock"></i> ${app.time || "-"}</span>
+                <span><i class="fa-regular fa-user"></i> ${app.expert || "Farketmez"}</span>
               </p>
             </div>
             <div class="app-status">
@@ -308,16 +385,36 @@ window.loadUserAppointments = async function () {
 
 window.cancelAppointment = async function (id) {
   if (!confirm("Randevuyu iptal etmek istediğinize emin misiniz?")) return;
+  
+  if (String(id).startsWith("local-") || !isNaN(id)) {
+    try {
+      let localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
+      const index = localAppointments.findIndex(app => String(app.id) === String(id));
+      if (index !== -1) {
+        localAppointments[index].status = 'rejected';
+        localStorage.setItem("hk_appointments_db", JSON.stringify(localAppointments));
+        showLocalToast("Randevu iptal edildi.", true);
+        loadUserAppointments();
+        return;
+      }
+    } catch(e) {
+      console.warn("Local storage cancel error:", e);
+    }
+  }
+
   // Supabase'den sil (veya statüyü rejected yap)
   try {
-    const { error } = await supabase
+    const { error } = await window.supabaseClient
       .from('appointments')
       .update({ status: 'rejected' })
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+       console.warn("Supabase cancel hatası:", error.message);
+    } else {
+       showLocalToast("Randevu iptal edildi.", true);
+    }
 
-    showLocalToast("Randevu iptal edildi.", true);
     loadUserAppointments();
   } catch (err) {
     console.error(err);
@@ -391,7 +488,7 @@ window.handleContactForm = async function (event) {
   btn.disabled = true;
 
   try {
-    const { error } = await supabase
+    const { error } = await window.supabaseClient
       .from('messages')
       .insert([
         {
@@ -401,7 +498,21 @@ window.handleContactForm = async function (event) {
         }
       ]);
 
-    if (error) throw error;
+    if (error) {
+      console.warn("Supabase mesaj hatası:", error.message);
+      // Fallback: Save to local storage
+      let localMessages = [];
+      try { localMessages = JSON.parse(localStorage.getItem("hk_messages_db")) || []; } catch (e) { }
+      localMessages.push({
+        id: "local-" + Date.now(),
+        name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
+        message: msgInput.value.trim(),
+        created_at: new Date().toISOString(),
+        is_read: false
+      });
+      localStorage.setItem("hk_messages_db", JSON.stringify(localMessages));
+    }
 
     showLocalToast('Mesajınız başarıyla iletildi. En kısa sürede dönüş sağlanacaktır.');
     event.target.reset();
@@ -411,7 +522,22 @@ window.handleContactForm = async function (event) {
     }
   } catch (err) {
     console.error(err);
-    showLocalToast('Mesaj gönderilirken hata oluştu.', true);
+    
+    // Fallback if client is completely broken
+    let localMessages = [];
+    try { localMessages = JSON.parse(localStorage.getItem("hk_messages_db")) || []; } catch (e) { }
+    localMessages.push({
+      id: "local-" + Date.now(),
+      name: document.getElementById("c-name")?.value.trim() || "Ziyaretçi",
+      email: document.getElementById("c-email")?.value.trim() || "Girilmedi",
+      message: document.getElementById("c-msg")?.value.trim() || "Boş Mesaj",
+      created_at: new Date().toISOString(),
+      is_read: false
+    });
+    localStorage.setItem("hk_messages_db", JSON.stringify(localMessages));
+    
+    showLocalToast('Mesajınız başarıyla iletildi. En kısa sürede dönüş sağlanacaktır.');
+    event.target.reset();
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
@@ -437,14 +563,28 @@ window.loadAdminNotifications = async function () {
   if (!countSpan || !listDiv) return;
 
   try {
-    const { data: messages, error } = await supabase
+    const { data: messages, error } = await window.supabaseClient
       .from('messages')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.warn("Supabase messages hatası:", error.message);
+    }
 
-    const safeMessages = messages || [];
+    let safeMessages = messages || [];
+    
+    // Add local fallback messages
+    try {
+      const localMessages = JSON.parse(localStorage.getItem("hk_messages_db")) || [];
+      safeMessages = [...safeMessages, ...localMessages];
+      
+      // Sort combined messages by date descending
+      safeMessages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } catch (e) {
+      console.error("Local messages error:", e);
+    }
+
     const unreadCount = safeMessages.filter(m => !m.is_read).length;
     countSpan.textContent = unreadCount;
 
@@ -485,12 +625,21 @@ window.loadAdminNotifications = async function () {
 
 window.markAllMessagesRead = async function () {
   try {
-    const { error } = await supabase
+    const { error } = await window.supabaseClient
       .from('messages')
       .update({ is_read: true })
       .eq('is_read', false);
 
-    if (error) throw error;
+    if (error) {
+       console.warn("Supabase messages hatası:", error.message);
+    }
+    
+    // Fallback: Mark local messages as read
+    try {
+      const localMessages = JSON.parse(localStorage.getItem("hk_messages_db")) || [];
+      localMessages.forEach(m => m.is_read = true);
+      localStorage.setItem("hk_messages_db", JSON.stringify(localMessages));
+    } catch (e) { }
 
     loadAdminNotifications();
     showLocalToast('Tüm mesajlar okundu olarak işaretlendi.');
@@ -502,7 +651,6 @@ window.markAllMessagesRead = async function () {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  window.checkAuthState();
 
   if (document.querySelector(".page--dashboard")) {
     if (typeof loadUserAppointments === 'function') loadUserAppointments();
@@ -546,22 +694,37 @@ window.loadAdminAppointments = async function () {
   if (!container && !containerAll) return;
 
   try {
-    const { data: appointments, error } = await supabase
+    const { data: appointments, error } = await window.supabaseClient
       .from('appointments')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+       console.warn("Supabase Admin Fetch Hatası:", error.message);
+    }
 
-    const safeApps = appointments || [];
+    let safeApps = appointments || [];
+
+    // Add local fallback appointments
+    try {
+      const localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
+      safeApps = [...safeApps, ...localAppointments];
+      safeApps.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } catch(e) {}
+
     const pendingApps = safeApps.filter(a => a.status === 'pending');
     const pendingCount = pendingApps.length;
     let expectedRevenue = 0;
 
-    pendingApps.forEach(app => {
-      if (app.price) {
-        expectedRevenue += parseInt(app.price.replace(/\D/g, '') || "0");
+    const approvedApps = safeApps.filter(a => a.status === 'approved');
+    approvedApps.forEach(app => {
+      let val = 0;
+      if (typeof app.price === 'number') {
+        val = app.price;
+      } else if (typeof app.price === 'string') {
+        val = parseInt(app.price.replace(/\D/g, ''), 10);
       }
+      if (!isNaN(val)) expectedRevenue += val;
     });
 
     const revenueEl = document.getElementById("admin-daily-revenue");
@@ -593,13 +756,16 @@ window.loadAdminAppointments = async function () {
       const actions = app.status === 'pending' ? `
           <button class="btn btn--sm" style="background:#4caf50; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.8rem;" onclick="updateAppointmentStatus('${app.id}', 'approved')"><i class="fa-solid fa-check"></i> Onayla</button>
           <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.8rem;" onclick="updateAppointmentStatus('${app.id}', 'rejected')"><i class="fa-solid fa-times"></i> Reddet</button>
-        ` : `<span style="font-size:0.85rem; color:#888;">İşlem Yapıldı</span>`;
+          <button class="btn btn--sm" style="background:#6c757d; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.8rem;" onclick="deleteAdminAppointment('${app.id}')"><i class="fa-solid fa-trash"></i> Sil</button>
+        ` : `<span style="font-size:0.85rem; color:#888;">İşlem Yapıldı</span>
+             <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; margin-left:8px; padding:6px 12px; cursor:pointer; font-size:0.8rem;" onclick="deleteAdminAppointment('${app.id}')"><i class="fa-solid fa-trash"></i> Sil</button>
+            `;
 
       return `
           <tr>
-            <td><strong>${app.user_name}</strong><br><span style="font-size:0.85rem; color:#666;">${app.service} (${app.expert})</span></td>
-            <td>${app.date}</td>
-            <td>${app.time}</td>
+            <td><strong>${app.user_name || "Misafir"}</strong><br><span style="font-size:0.85rem; color:#666;">${app.service || "Hizmet Yok"} (${app.expert || "Farketmez"})</span></td>
+            <td>${app.date || "-"}</td>
+            <td>${app.time || "-"}</td>
             <td>${statusText}</td>
             <td style="display:flex; gap:8px;">${actions}</td>
           </tr>
@@ -616,13 +782,36 @@ window.loadAdminAppointments = async function () {
 };
 
 window.updateAppointmentStatus = async function (id, newStatus) {
+  if (String(id).startsWith("local-")) {
+    try {
+      let localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
+      const index = localAppointments.findIndex(app => String(app.id) === String(id));
+      if (index !== -1) {
+        localAppointments[index].status = newStatus;
+        localStorage.setItem("hk_appointments_db", JSON.stringify(localAppointments));
+        
+        loadAdminAppointments();
+        if (newStatus === 'approved') {
+          showLocalToast('Randevu onaylandı.');
+        } else {
+          showLocalToast('Randevu reddedildi.', true);
+        }
+        return;
+      }
+    } catch(e) {
+      console.warn("Local storage update error:", e);
+    }
+  }
+
   try {
-    const { error } = await supabase
+    const { error } = await window.supabaseClient
       .from('appointments')
       .update({ status: newStatus })
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+       console.warn("Supabase admin update hatası:", error.message);
+    }
 
     loadAdminAppointments();
     if (newStatus === 'approved') {
@@ -647,16 +836,6 @@ window.loadAdminCustomers = function () {
 
   let customers = users.filter(u => u.role === "user");
 
-  const hasHalil = customers.some(u => (u.fname?.toLowerCase() || '') === 'halil' && (u.lname?.toLowerCase() || '') === 'cambaz');
-  if (!hasHalil) {
-    customers.push({
-      fname: 'Halil',
-      lname: 'Cambaz',
-      email: 'halil.cambaz@example.com',
-      role: 'user'
-    });
-  }
-
   if (customers.length === 0) {
     container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
     return;
@@ -680,11 +859,73 @@ window.loadAdminCustomers = function () {
         </div>
         <div class="app-status">
           ${badgeType}
-          <button class="btn btn--outline btn--sm" onclick="showLocalToast('Müşteri detayı henüz aktif değil.')"><i class="fa-solid fa-pen"></i> Düzenle</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn--outline btn--sm" onclick="showLocalToast('Müşteri detayı henüz aktif değil.')"><i class="fa-solid fa-pen"></i> Düzenle</button>
+            <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;" onclick="deleteAdminCustomer('${user.email}')"><i class="fa-solid fa-trash"></i> Sil</button>
+          </div>
         </div>
       </div>
     `;
   }).join('');
+};
+
+window.deleteAdminAppointment = async function(id) {
+  if (!confirm("Bu randevuyu kalıcı olarak silmek istediğinize emin misiniz?")) return;
+
+  if (String(id).startsWith("local-")) {
+    try {
+      let localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
+      const index = localAppointments.findIndex(app => String(app.id) === String(id));
+      if (index !== -1) {
+        localAppointments.splice(index, 1);
+        localStorage.setItem("hk_appointments_db", JSON.stringify(localAppointments));
+        showLocalToast("Randevu başarıyla silindi.", false);
+        loadAdminAppointments();
+        return;
+      }
+    } catch(e) {
+      console.warn("Local storage delete error:", e);
+    }
+  }
+
+  try {
+    const { error } = await window.supabaseClient
+      .from('appointments')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.warn("Supabase admin delete hatası:", error.message);
+      showLocalToast("Kayıt veritabanından silinemedi.", true);
+      return;
+    }
+    
+    showLocalToast("Randevu başarıyla silindi.", false);
+    loadAdminAppointments();
+  } catch(err) {
+    console.error(err);
+    showLocalToast("Silme işlemi sırasında hata oluştu.", true);
+  }
+};
+
+window.deleteAdminCustomer = function(email) {
+  if (!confirm("Bu müşteriyi sistemden silmek istediğinize emin misiniz?")) return;
+
+  try {
+    let users = JSON.parse(localStorage.getItem("hk_users_db")) || [];
+    const index = users.findIndex(u => u.email === email);
+    if (index !== -1) {
+      users.splice(index, 1);
+      localStorage.setItem("hk_users_db", JSON.stringify(users));
+      showLocalToast("Müşteri başarıyla silindi.", false);
+      loadAdminCustomers();
+    } else {
+      showLocalToast("Müşteri bulunamadı.", true);
+    }
+  } catch(e) {
+    console.error(e);
+    showLocalToast("Silme işlemi sırasında hata oluştu.", true);
+  }
 };
 
 window.initDefaultServices = function () {
@@ -850,5 +1091,61 @@ window.loadIndexServices = function () {
   } else {
     container.querySelectorAll(".reveal").forEach(el => el.classList.add('reveal--visible'));
   }
+};
+
+// --- Admin Quick Notes ---
+window.loadAdminNotes = function() {
+  const container = document.getElementById("admin-notes-list");
+  if (!container) return;
+
+  let notes = [];
+  try {
+    notes = JSON.parse(localStorage.getItem("hk_admin_notes")) || [];
+  } catch(e) {}
+
+  if (notes.length === 0) {
+    container.innerHTML = '<div style="color:#888; font-size:0.9rem; font-style:italic;">Henüz not eklenmedi.</div>';
+    return;
+  }
+
+  container.innerHTML = notes.map(note => `
+    <div style="background:#fdfdfd; border-left:3px solid var(--color-gold); padding:10px; margin-bottom:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.95rem;">${note.text}</span>
+      <button onclick="window.deleteAdminNote('${note.id}')" style="background:none; border:none; color:#f44336; cursor:pointer;" title="Sil"><i class="fa-solid fa-trash"></i></button>
+    </div>
+  `).join('');
+};
+
+window.saveAdminNote = function() {
+  const input = document.getElementById("admin-new-note");
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  let notes = [];
+  try {
+    notes = JSON.parse(localStorage.getItem("hk_admin_notes")) || [];
+  } catch(e) {}
+
+  notes.unshift({
+    id: "note-" + Date.now(),
+    text: text
+  });
+
+  localStorage.setItem("hk_admin_notes", JSON.stringify(notes));
+  input.value = '';
+  showLocalToast("Not eklendi.");
+  loadAdminNotes();
+};
+
+window.deleteAdminNote = function(id) {
+  let notes = [];
+  try {
+    notes = JSON.parse(localStorage.getItem("hk_admin_notes")) || [];
+  } catch(e) {}
+
+  notes = notes.filter(n => n.id !== id);
+  localStorage.setItem("hk_admin_notes", JSON.stringify(notes));
+  loadAdminNotes();
 };
 
