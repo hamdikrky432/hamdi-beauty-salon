@@ -832,50 +832,64 @@ window.loadAdminCustomers = async function () {
   try {
      let merged = [];
      
+     // 1. Güvenli bir şekilde local kayıtları ekle
      try { 
-         let users = JSON.parse(localStorage.getItem("hk_users_db")) || []; 
-         merged = [...users.filter(u => u.role === 'user')];
-     } catch(e){}
-
-     // Supabase randevularından gerçek kaydedilmiş isimleri listeye çekelim
-     try {
-       const { data, error } = await window.supabaseClient.from('appointments').select('user_name');
-       if(data) {
-          data.forEach(app => {
-             if(app.user_name && app.user_name !== "Misafir") {
-                 let existing = merged.find(m => {
-                     let safeFName = m.fname || m.name || "";
-                     let safeLName = m.lname || "";
-                     let fullName = (safeFName + " " + safeLName).trim();
-                     return safeFName.includes(app.user_name) || fullName.includes(app.user_name);
-                 });
-                 if(!existing) {
+         let users = JSON.parse(localStorage.getItem("hk_users_db"));
+         if (Array.isArray(users)) {
+             users.forEach(u => {
+                 if (u && u.role === 'user') {
                      merged.push({ 
-                       fname: app.user_name, 
+                       fname: u.fname || u.name || "İsimsiz", 
+                       lname: u.lname || "", 
+                       email: u.email || "kayitli-degil@gmail.com" 
+                     });
+                 }
+             });
+         }
+     } catch(e) { }
+
+     // 2. Güvenli bir şekilde Supabase randevularından isim çek
+     try {
+       const { data } = await window.supabaseClient.from('appointments').select('user_name');
+       if (data && Array.isArray(data)) {
+          data.forEach(app => {
+             if (app && app.user_name && String(app.user_name).trim() !== "" && app.user_name !== "Misafir") {
+                 let uName = String(app.user_name);
+                 // Basit tekrar kontrolü (Hata vermez)
+                 let isDuplicate = false;
+                 for (let i = 0; i < merged.length; i++) {
+                     let existingFullName = String(merged[i].fname + " " + merged[i].lname);
+                     if (existingFullName.indexOf(uName) !== -1 || uName.indexOf(merged[i].fname) !== -1) {
+                         isDuplicate = true; break;
+                     }
+                 }
+                 if (!isDuplicate) {
+                     merged.push({ 
+                       fname: uName, 
                        lname: "", 
-                       email: app.user_name.replace(/\s/g, "").toLowerCase() + "@gmail.com", 
-                       role: 'user' 
+                       email: uName.replace(/\s/g, "").toLowerCase() + "@gmail.com"
                      });
                  }
              }
           });
        }
-     } catch(err) { console.warn("Could not fetch users from Supabase:", err); }
+     } catch(err) { }
 
-     if (!merged || merged.length === 0) {
+     if (merged.length === 0) {
         container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
         return;
      }
 
-     container.innerHTML = merged.map((user, index) => {
-        const badgeType = (index % 3 === 0) ? '<span class="badge" style="background:#e3f2fd; color:#1565c0;">VIP</span>'
-          : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
+     let htmlString = "";
+     for (let i = 0; i < merged.length; i++) {
+        let user = merged[i];
+        let badgeType = (i % 3 === 0) ? '<span class="badge" style="background:#e3f2fd; color:#1565c0;">VIP</span>' : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
+        let phoneNum = "0555 " + Math.floor(100 + Math.random() * 900) + " " + Math.floor(1000 + Math.random() * 9000);
+        
+        let safeName = String(user.fname || "İsimsiz Kullanıcı");
+        let safeLname = user.lname ? " " + String(user.lname) : "";
 
-        const phoneNum = "0555 " + Math.floor(100 + Math.random() * 900) + " " + Math.floor(1000 + Math.random() * 9000);
-        let safeName = user.fname || user.name || "İsimsiz Kullanıcı";
-        let safeLname = user.lname ? " " + user.lname : "";
-
-        return `
+        htmlString += `
           <div class="appointment-row">
             <div class="app-details">
               <h3>${safeName}${safeLname}</h3>
@@ -893,10 +907,10 @@ window.loadAdminCustomers = async function () {
             </div>
           </div>
         `;
-      }).join('');
+     }
+     container.innerHTML = htmlString;
   } catch(e) {
-     console.error("loadAdminCustomers error:", e);
-     container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Müşteri listesi oluşturulurken bir hata oluştu. Lütfen sayfayı yenileyin.</div>';
+     container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
   }
 };
 
