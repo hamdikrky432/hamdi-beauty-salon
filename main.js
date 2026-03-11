@@ -838,18 +838,31 @@ window.loadAdminCustomers = async function () {
      } catch(e){}
 
      // Supabase randevularından gerçek kaydedilmiş isimleri listeye çekelim
-     const { data, error } = await window.supabaseClient.from('appointments').select('user_name');
-     if(data) {
-        data.forEach(app => {
-           if(app.user_name && app.user_name !== "Misafir") {
-               if(!merged.find(m => m.fname.includes(app.user_name) || (m.fname + " " + m.lname).includes(app.user_name))) {
-                   merged.push({ fname: app.user_name, lname: "", email: app.user_name.replace(" ", "").toLowerCase() + "@gmail.com", role: 'user' });
-               }
-           }
-        });
-     }
+     try {
+       const { data, error } = await window.supabaseClient.from('appointments').select('user_name');
+       if(data) {
+          data.forEach(app => {
+             if(app.user_name && app.user_name !== "Misafir") {
+                 let existing = merged.find(m => {
+                     let safeFName = m.fname || m.name || "";
+                     let safeLName = m.lname || "";
+                     let fullName = (safeFName + " " + safeLName).trim();
+                     return safeFName.includes(app.user_name) || fullName.includes(app.user_name);
+                 });
+                 if(!existing) {
+                     merged.push({ 
+                       fname: app.user_name, 
+                       lname: "", 
+                       email: app.user_name.replace(/\s/g, "").toLowerCase() + "@gmail.com", 
+                       role: 'user' 
+                     });
+                 }
+             }
+          });
+       }
+     } catch(err) { console.warn("Could not fetch users from Supabase:", err); }
 
-     if (merged.length === 0) {
+     if (!merged || merged.length === 0) {
         container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
         return;
      }
@@ -859,11 +872,13 @@ window.loadAdminCustomers = async function () {
           : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
 
         const phoneNum = "0555 " + Math.floor(100 + Math.random() * 900) + " " + Math.floor(1000 + Math.random() * 9000);
+        let safeName = user.fname || user.name || "İsimsiz Kullanıcı";
+        let safeLname = user.lname ? " " + user.lname : "";
 
         return `
           <div class="appointment-row">
             <div class="app-details">
-              <h3>${user.fname} ${user.lname}</h3>
+              <h3>${safeName}${safeLname}</h3>
               <p>
                 <span><i class="fa-regular fa-envelope"></i> ${user.email}</span>
                 <span><i class="fa-solid fa-phone"></i> ${phoneNum}</span>
@@ -881,6 +896,7 @@ window.loadAdminCustomers = async function () {
       }).join('');
   } catch(e) {
      console.error("loadAdminCustomers error:", e);
+     container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Müşteri listesi oluşturulurken bir hata oluştu. Lütfen sayfayı yenileyin.</div>';
   }
 };
 
