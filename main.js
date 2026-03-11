@@ -825,48 +825,63 @@ window.updateAppointmentStatus = async function (id, newStatus) {
   }
 };
 
-window.loadAdminCustomers = function () {
+window.loadAdminCustomers = async function () {
   const container = document.getElementById("admin-customers-list");
   if (!container) return;
 
-  let users = [];
   try {
-    users = JSON.parse(localStorage.getItem("hk_users_db")) || [];
-  } catch (e) { }
+     let merged = [];
+     
+     try { 
+         let users = JSON.parse(localStorage.getItem("hk_users_db")) || []; 
+         merged = [...users.filter(u => u.role === 'user')];
+     } catch(e){}
 
-  let customers = users.filter(u => u.role === "user");
+     // Supabase randevularından gerçek kaydedilmiş isimleri listeye çekelim
+     const { data, error } = await window.supabaseClient.from('appointments').select('user_name');
+     if(data) {
+        data.forEach(app => {
+           if(app.user_name && app.user_name !== "Misafir") {
+               if(!merged.find(m => m.fname.includes(app.user_name) || (m.fname + " " + m.lname).includes(app.user_name))) {
+                   merged.push({ fname: app.user_name, lname: "", email: app.user_name.replace(" ", "").toLowerCase() + "@gmail.com", role: 'user' });
+               }
+           }
+        });
+     }
 
-  if (customers.length === 0) {
-    container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
-    return;
-  }
+     if (merged.length === 0) {
+        container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
+        return;
+     }
 
-  container.innerHTML = customers.map((user, index) => {
+     container.innerHTML = merged.map((user, index) => {
+        const badgeType = (index % 3 === 0) ? '<span class="badge" style="background:#e3f2fd; color:#1565c0;">VIP</span>'
+          : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
 
-    const badgeType = (index % 3 === 0) ? '<span class="badge" style="background:#e3f2fd; color:#1565c0;">VIP</span>'
-      : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
+        const phoneNum = "0555 " + Math.floor(100 + Math.random() * 900) + " " + Math.floor(1000 + Math.random() * 9000);
 
-    const phoneNum = "0555 " + Math.floor(100 + Math.random() * 900) + " " + Math.floor(1000 + Math.random() * 9000);
-
-    return `
-      <div class="appointment-row">
-        <div class="app-details">
-          <h3>${user.fname} ${user.lname}</h3>
-          <p>
-            <span><i class="fa-regular fa-envelope"></i> ${user.email}</span>
-            <span><i class="fa-solid fa-phone"></i> ${phoneNum}</span>
-          </p>
-        </div>
-        <div class="app-status">
-          ${badgeType}
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn--outline btn--sm" onclick="showLocalToast('Müşteri detayı henüz aktif değil.')"><i class="fa-solid fa-pen"></i> Düzenle</button>
-            <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;" onclick="deleteAdminCustomer('${user.email}')"><i class="fa-solid fa-trash"></i> Sil</button>
+        return `
+          <div class="appointment-row">
+            <div class="app-details">
+              <h3>${user.fname} ${user.lname}</h3>
+              <p>
+                <span><i class="fa-regular fa-envelope"></i> ${user.email}</span>
+                <span><i class="fa-solid fa-phone"></i> ${phoneNum}</span>
+              </p>
+            </div>
+            <div class="app-status">
+              ${badgeType}
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn--outline btn--sm" onclick="showLocalToast('Müşteri detayı henüz aktif değil.')"><i class="fa-solid fa-pen"></i> Düzenle</button>
+                <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;" onclick="deleteAdminCustomer('${user.email}')"><i class="fa-solid fa-trash"></i> Sil</button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+        `;
+      }).join('');
+  } catch(e) {
+     console.error("loadAdminCustomers error:", e);
+  }
 };
 
 window.deleteAdminAppointment = async function(id) {
