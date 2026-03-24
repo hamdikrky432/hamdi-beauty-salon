@@ -492,8 +492,7 @@ window.handleContactForm = async function (event) {
       .from('messages')
       .insert([
         {
-          name: nameInput.value.trim(),
-          email: emailInput.value.trim(),
+          name: nameInput.value.trim() + " (" + emailInput.value.trim() + ")",
           message: msgInput.value.trim()
         }
       ]);
@@ -610,10 +609,17 @@ window.loadAdminNotifications = async function () {
     listDiv.innerHTML = safeMessages.map(m => {
       const bg = m.is_read ? "transparent" : "#fffcf2";
       const dateStr = new Date(m.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+      let mEmail = m.email || "Belirtilmedi";
+      let mName = m.name || "İsimsiz";
+      const emailMatch = mName.match(/\((.*?@.*?)\)/);
+      if (emailMatch) {
+         mEmail = emailMatch[1];
+         mName = mName.replace(emailMatch[0], "").trim();
+      }
       return `
           <div style="padding:15px; border-bottom:1px solid #eee; background:${bg};">
-            <div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">${m.name} <span style="font-weight:400; font-size:0.75rem; color:#888; float:right;">${dateStr}</span></div>
-            <div style="font-size:0.8rem; color:#666; margin-bottom:6px;"><i class="fa-regular fa-envelope"></i> <a href="mailto:${m.email}" style="color:#d4af37; text-decoration:none;">${m.email}</a></div>
+            <div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">${mName} <span style="font-weight:400; font-size:0.75rem; color:#888; float:right;">${dateStr}</span></div>
+            <div style="font-size:0.8rem; color:#666; margin-bottom:6px;"><i class="fa-regular fa-envelope"></i> <a href="mailto:${mEmail}" style="color:#d4af37; text-decoration:none;">${mEmail}</a></div>
             <div style="font-size:0.85rem; line-height:1.4;">${m.message}</div>
           </div>
           `;
@@ -626,9 +632,17 @@ window.loadAdminNotifications = async function () {
             const statusBadge = m.is_read ? '<span class="badge approved">Okundu</span>' : '<span class="badge pending">Okunmadı</span>';
             const actionBtn = m.is_read ? '' : `<button class="btn btn--sm" style="background:#4caf50; color:#fff; border:none; border-radius:4px; margin-right:4px; padding:6px 12px; cursor:pointer;" onclick="markSingleMessageRead('${m.id}')"><i class="fa-solid fa-check"></i> Okundu</button>`;
             
+            let mEmail = m.email || "Belirtilmedi";
+            let mName = m.name || "İsimsiz";
+            const emailMatch = mName.match(/\((.*?@.*?)\)/);
+            if (emailMatch) {
+               mEmail = emailMatch[1];
+               mName = mName.replace(emailMatch[0], "").trim();
+            }
+
             return `
             <tr style="background: ${m.is_read ? 'transparent' : '#fffcf2'}; border-bottom:1px solid #eee;">
-                <td style="padding:15px 20px;"><strong>${m.name}</strong><br><a href="mailto:${m.email}" style="color:var(--color-primary); font-size:0.85rem;">${m.email}</a></td>
+                <td style="padding:15px 20px;"><strong>${mName}</strong><br><a href="mailto:${mEmail}" style="color:var(--color-primary); font-size:0.85rem;">${mEmail}</a></td>
                 <td style="padding:15px 20px;">${dateStr}</td>
                 <td style="padding:15px 20px; max-width:300px; word-wrap:break-word;">${m.message}</td>
                 <td style="padding:15px 20px;">${statusBadge}</td>
@@ -936,7 +950,7 @@ window.loadAdminCustomers = async function () {
      for (let i = 0; i < merged.length; i++) {
         let user = merged[i];
         let badgeType = (i % 3 === 0) ? '<span class="badge" style="background:#e3f2fd; color:#1565c0;">VIP</span>' : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
-        let phoneNum = "0555 " + Math.floor(100 + Math.random() * 900) + " " + Math.floor(1000 + Math.random() * 9000);
+        let phoneNum = user.phone || "Güvenlik Nedeniyle Gizli";
         
         let safeName = String(user.fname || "İsimsiz Kullanıcı");
         let safeLname = user.lname ? " " + String(user.lname) : "";
