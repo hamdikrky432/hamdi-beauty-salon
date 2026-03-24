@@ -274,7 +274,7 @@ window.loadUserAppointments = async function () {
 
   try {
     let myAppointments = [];
-    let query = window.supabaseClient.from('appointments').select('*').order('created_at', { ascending: false });
+    let query = window.supabaseClient.from('appointments').select('*').not('status', 'in', '("message","registered")').order('created_at', { ascending: false });
 
     // Kullanıcı ID'si varsa ID'ye göre çek (RLS kuralları gereği kendi datasını alacak)
     // Yoksa da isim eşleşmesi yap (Misafir vs.)
@@ -489,11 +489,13 @@ window.handleContactForm = async function (event) {
 
   try {
     const { error } = await window.supabaseClient
-      .from('messages')
+      .from('appointments')
       .insert([
         {
-          name: nameInput.value.trim() + " (" + emailInput.value.trim() + ")",
-          message: msgInput.value.trim()
+          name: nameInput.value.trim(),
+          email: emailInput.value.trim(),
+          message: msgInput.value.trim(),
+          status: 'message'
         }
       ]);
 
@@ -563,8 +565,9 @@ window.loadAdminNotifications = async function () {
 
   try {
     const { data: messages, error } = await window.supabaseClient
-      .from('messages')
+      .from('appointments')
       .select('*')
+      .eq('status', 'message')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -611,11 +614,6 @@ window.loadAdminNotifications = async function () {
       const dateStr = new Date(m.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
       let mEmail = m.email || "Belirtilmedi";
       let mName = m.name || "İsimsiz";
-      const emailMatch = mName.match(/\((.*?@.*?)\)/);
-      if (emailMatch) {
-         mEmail = emailMatch[1];
-         mName = mName.replace(emailMatch[0], "").trim();
-      }
       return `
           <div style="padding:15px; border-bottom:1px solid #eee; background:${bg};">
             <div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">${mName} <span style="font-weight:400; font-size:0.75rem; color:#888; float:right;">${dateStr}</span></div>
@@ -634,12 +632,7 @@ window.loadAdminNotifications = async function () {
             
             let mEmail = m.email || "Belirtilmedi";
             let mName = m.name || "İsimsiz";
-            const emailMatch = mName.match(/\((.*?@.*?)\)/);
-            if (emailMatch) {
-               mEmail = emailMatch[1];
-               mName = mName.replace(emailMatch[0], "").trim();
-            }
-
+            
             return `
             <tr style="background: ${m.is_read ? 'transparent' : '#fffcf2'}; border-bottom:1px solid #eee;">
                 <td style="padding:15px 20px;"><strong>${mName}</strong><br><a href="mailto:${mEmail}" style="color:var(--color-primary); font-size:0.85rem;">${mEmail}</a></td>
@@ -669,7 +662,7 @@ window.markSingleMessageRead = async function(id) {
             }
         } catch(e) {}
     } else {
-        await window.supabaseClient.from('messages').update({ is_read: true }).eq('id', id);
+        await window.supabaseClient.from('appointments').update({ is_read: true }).eq('id', id);
     }
     loadAdminNotifications();
 };
@@ -683,7 +676,7 @@ window.deleteMessage = async function(id) {
             localStorage.setItem("hk_messages_db", JSON.stringify(localMessages));
         } catch(e) {}
     } else {
-        await window.supabaseClient.from('messages').delete().eq('id', id);
+        await window.supabaseClient.from('appointments').delete().eq('id', id);
     }
     showLocalToast("Mesaj silindi.");
     loadAdminNotifications();
@@ -692,8 +685,9 @@ window.deleteMessage = async function(id) {
 window.markAllMessagesRead = async function () {
   try {
     const { error } = await window.supabaseClient
-      .from('messages')
+      .from('appointments')
       .update({ is_read: true })
+      .eq('status', 'message')
       .eq('is_read', false);
 
     if (error) {
@@ -763,6 +757,7 @@ window.loadAdminAppointments = async function () {
     const { data: appointments, error } = await window.supabaseClient
       .from('appointments')
       .select('*')
+      .not('status', 'in', '("message","registered")')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -914,26 +909,29 @@ window.loadAdminCustomers = async function () {
          }
      } catch(e) { }
 
-     // 2. Güvenli bir şekilde Supabase randevularından isim çek
+     // 2. Supabase appointments tablosundaki 'registered' satırlarından gerçek üye verilerini çek
      try {
-       const { data } = await window.supabaseClient.from('appointments').select('user_name');
+       const { data } = await window.supabaseClient.from('appointments').select('*').eq('status', 'registered');
        if (data && Array.isArray(data)) {
           data.forEach(app => {
-             if (app && app.user_name && String(app.user_name).trim() !== "" && app.user_name !== "Misafir") {
+             if (app && app.user_name) {
                  let uName = String(app.user_name);
-                 // Basit tekrar kontrolü (Hata vermez)
+                 let uEmail = app.email || "Belirtilmedi";
+                 let uPhone = app.expert || "Gizli";
+                 
                  let isDuplicate = false;
                  for (let i = 0; i < merged.length; i++) {
-                     let existingFullName = String(merged[i].fname + " " + merged[i].lname);
-                     if (existingFullName.indexOf(uName) !== -1 || uName.indexOf(merged[i].fname) !== -1) {
-                         isDuplicate = true; break;
-                     }
+                     if (merged[i].email === uEmail) { isDuplicate = true; break; }
                  }
                  if (!isDuplicate) {
+                     let parts = uName.split(' ');
+                     let lName = parts.length > 1 ? parts.pop() : "";
+                     let fName = parts.join(' ');
                      merged.push({ 
-                       fname: uName, 
-                       lname: "", 
-                       email: uName.replace(/\s/g, "").toLowerCase() + "@gmail.com"
+                       fname: fName, 
+                       lname: lName, 
+                       email: uEmail,
+                       phone: uPhone
                      });
                  }
              }

@@ -42,6 +42,7 @@ window.handleRegister = async function (event) {
 
     const fname = document.getElementById("fname")?.value.trim() || "";
     const lname = document.getElementById("lname")?.value.trim() || "";
+    const phone = document.getElementById("phone")?.value.trim() || "";
     const rawEmail = document.getElementById("email")?.value || "";
     const email = rawEmail.replace(/[\s\u200B-\u200D\uFEFF\u00A0]/g, '').trim().toLowerCase();
     const password = document.getElementById("password")?.value || "";
@@ -96,6 +97,16 @@ window.handleRegister = async function (event) {
             }
             showLocalToast(errorMessage, true);
         } else {
+            // Sisteme kaydı adminin görebilmesi için appointments tablosuna "registered" etiketiyle kaydedelim
+            // Çünkü yetkiler gereği Auth.users listesini çekemiyoruz ve public users tablosu yok.
+            // expert sütununu telefon numarası için kullanacağız.
+            await window.supabaseClient.from('appointments').insert([{
+                user_name: fname + " " + lname,
+                email: email,
+                expert: phone,
+                status: "registered"
+            }]);
+
             // Otomatik girişi engelle (Çıkış yap) ve logine yönlendir
             await window.supabaseClient.auth.signOut();
 
@@ -104,7 +115,7 @@ window.handleRegister = async function (event) {
             try { users = JSON.parse(localStorage.getItem("hk_users_db")) || []; } catch (e) { }
             // Aynı email yoksa ekle
             if (!users.find(u => u.email === email)) {
-                users.push({ fname, lname, email, password, role: 'user' });
+                users.push({ fname, lname, email, password, role: 'user', phone: phone });
                 localStorage.setItem("hk_users_db", JSON.stringify(users));
             }
 
