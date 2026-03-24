@@ -96,6 +96,15 @@ window.handleRegister = async function (event) {
             }
             showLocalToast(errorMessage, true);
         } else {
+            // Başarılı kayıtta, admin panelinde "Üyeler" listesinde gözükebilmesi için Locale de ekleyelim
+            let users = [];
+            try { users = JSON.parse(localStorage.getItem("hk_users_db")) || []; } catch (e) { }
+            // Aynı email yoksa ekle
+            if (!users.find(u => u.email === email)) {
+                users.push({ fname, lname, email, password, role: 'user' });
+                localStorage.setItem("hk_users_db", JSON.stringify(users));
+            }
+
             showLocalToast("Kayıt işleminiz başarıyla tamamlandı, yönlendiriliyorsunuz...");
             setTimeout(() => {
                 window.location.href = "login.html";
@@ -264,7 +273,7 @@ window.logout = async function () {
 window.checkAuthState = async function () {
     let userJson = localStorage.getItem("hk_auth_user");
     const path = window.location.pathname.toLowerCase();
-    const isAuthPage = path.includes("login.html") || path.includes("register.html");
+    let isAuthPage = path.includes("login.html") || path.includes("register.html");
 
 
     try {
@@ -281,8 +290,15 @@ window.checkAuthState = async function () {
 
             if (session && !userJson) {
                 const user = session.user;
+                let finalName = "Kullanıcı";
+                if (user.user_metadata) {
+                    const fn = user.user_metadata.first_name || "";
+                    const ln = user.user_metadata.last_name || "";
+                    const rawName = (fn + " " + ln).trim();
+                    if (rawName && rawName.length > 0) finalName = rawName;
+                }
                 const newUserJson = JSON.stringify({
-                    name: (user.user_metadata?.first_name + " " + user.user_metadata?.last_name).trim() || "Kullanıcı",
+                    name: finalName,
                     role: user.user_metadata?.role || 'user',
                     email: user.email,
                     id: user.id
@@ -313,10 +329,14 @@ window.checkAuthState = async function () {
     }
 
 
+    isAuthPage = path.includes("login.html");
+
+    // "register.html" de giriş yapılmışsa engellemeyelim, arka planda giriş yapsa da formu doldursun.
+    // Artık sadece login.html de isek ana sayfaya atarız.
+
     if (userJson && isAuthPage) {
         try {
             const user = JSON.parse(userJson);
-
             window.location.replace(user.role === "admin" ? "admin.html" : "kullanici.html");
             return;
         } catch (e) { }

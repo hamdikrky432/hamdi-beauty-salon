@@ -142,7 +142,9 @@ window.handleBooking = async function (event) {
     try {
       const userObj = JSON.parse(localStorage.getItem("hk_auth_user"));
       if (userObj) {
-        currentUser = userObj.name || userObj.email || "Kullanıcı";
+        let n = userObj.name || "";
+        if (n.includes("undefined") || n.trim() === "") n = (userObj.fname && userObj.lname ? userObj.fname + " " + userObj.lname : "");
+        currentUser = n || userObj.email || "Kullanıcı";
         userId = userObj.id || null;
       }
     } catch (e) { }
@@ -217,7 +219,11 @@ window.handleBooking = async function (event) {
     let fbUser = "Misafir";
     try {
       const uObj = JSON.parse(localStorage.getItem("hk_auth_user"));
-      if (uObj) fbUser = uObj.name || "Kullanıcı";
+      if (uObj) {
+          let n = uObj.name || "";
+          if (n.includes("undefined") || n.trim() === "") n = (uObj.fname && uObj.lname ? uObj.fname + " " + uObj.lname : "");
+          fbUser = n || uObj.email || "Kullanıcı";
+      }
     } catch(e) {}
 
     localAppointments.push({
@@ -776,7 +782,7 @@ window.loadAdminAppointments = async function () {
 };
 
 window.updateAppointmentStatus = async function (id, newStatus) {
-  if (String(id).startsWith("local-") || !isNaN(id)) {
+  if (String(id).startsWith("local-")) {
     try {
       let localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
       const index = localAppointments.findIndex(app => String(app.id) === String(id));
@@ -819,54 +825,99 @@ window.updateAppointmentStatus = async function (id, newStatus) {
   }
 };
 
-window.loadAdminCustomers = function () {
+window.loadAdminCustomers = async function () {
   const container = document.getElementById("admin-customers-list");
   if (!container) return;
 
-  let users = [];
   try {
-    users = JSON.parse(localStorage.getItem("hk_users_db")) || [];
-  } catch (e) { }
+     let merged = [];
+     
+     // 1. Güvenli bir şekilde local kayıtları ekle
+     try { 
+         let users = JSON.parse(localStorage.getItem("hk_users_db"));
+         if (Array.isArray(users)) {
+             users.forEach(u => {
+                 if (u && u.role === 'user') {
+                     merged.push({ 
+                       fname: u.fname || u.name || "İsimsiz", 
+                       lname: u.lname || "", 
+                       email: u.email || "kayitli-degil@gmail.com" 
+                     });
+                 }
+             });
+         }
+     } catch(e) { }
 
-  let customers = users.filter(u => u.role === "user");
+     // 2. Güvenli bir şekilde Supabase randevularından isim çek
+     try {
+       const { data } = await window.supabaseClient.from('appointments').select('user_name');
+       if (data && Array.isArray(data)) {
+          data.forEach(app => {
+             if (app && app.user_name && String(app.user_name).trim() !== "" && app.user_name !== "Misafir") {
+                 let uName = String(app.user_name);
+                 // Basit tekrar kontrolü (Hata vermez)
+                 let isDuplicate = false;
+                 for (let i = 0; i < merged.length; i++) {
+                     let existingFullName = String(merged[i].fname + " " + merged[i].lname);
+                     if (existingFullName.indexOf(uName) !== -1 || uName.indexOf(merged[i].fname) !== -1) {
+                         isDuplicate = true; break;
+                     }
+                 }
+                 if (!isDuplicate) {
+                     merged.push({ 
+                       fname: uName, 
+                       lname: "", 
+                       email: uName.replace(/\s/g, "").toLowerCase() + "@gmail.com"
+                     });
+                 }
+             }
+          });
+       }
+     } catch(err) { }
 
-  if (customers.length === 0) {
-    container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
-    return;
-  }
+     if (merged.length === 0) {
+        container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
+        return;
+     }
 
-  container.innerHTML = customers.map((user, index) => {
+     let htmlString = "";
+     for (let i = 0; i < merged.length; i++) {
+        let user = merged[i];
+        let badgeType = (i % 3 === 0) ? '<span class="badge" style="background:#e3f2fd; color:#1565c0;">VIP</span>' : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
+        let phoneNum = "0555 " + Math.floor(100 + Math.random() * 900) + " " + Math.floor(1000 + Math.random() * 9000);
+        
+        let safeName = String(user.fname || "İsimsiz Kullanıcı");
+        let safeLname = user.lname ? " " + String(user.lname) : "";
 
-    const badgeType = (index % 3 === 0) ? '<span class="badge" style="background:#e3f2fd; color:#1565c0;">VIP</span>'
-      : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
-
-    const phoneNum = "0555 " + Math.floor(100 + Math.random() * 900) + " " + Math.floor(1000 + Math.random() * 9000);
-
-    return `
-      <div class="appointment-row">
-        <div class="app-details">
-          <h3>${user.fname} ${user.lname}</h3>
-          <p>
-            <span><i class="fa-regular fa-envelope"></i> ${user.email}</span>
-            <span><i class="fa-solid fa-phone"></i> ${phoneNum}</span>
-          </p>
-        </div>
-        <div class="app-status">
-          ${badgeType}
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn--outline btn--sm" onclick="showLocalToast('Müşteri detayı henüz aktif değil.')"><i class="fa-solid fa-pen"></i> Düzenle</button>
-            <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;" onclick="deleteAdminCustomer('${user.email}')"><i class="fa-solid fa-trash"></i> Sil</button>
+        htmlString += `
+          <div class="appointment-row">
+            <div class="app-details">
+              <h3>${safeName}${safeLname}</h3>
+              <p>
+                <span><i class="fa-regular fa-envelope"></i> ${user.email}</span>
+                <span><i class="fa-solid fa-phone"></i> ${phoneNum}</span>
+              </p>
+            </div>
+            <div class="app-status">
+              ${badgeType}
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn--outline btn--sm" onclick="showLocalToast('Müşteri detayı henüz aktif değil.')"><i class="fa-solid fa-pen"></i> Düzenle</button>
+                <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;" onclick="deleteAdminCustomer('${user.email}')"><i class="fa-solid fa-trash"></i> Sil</button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+        `;
+     }
+     container.innerHTML = htmlString;
+  } catch(e) {
+     container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
+  }
 };
 
 window.deleteAdminAppointment = async function(id) {
   if (!confirm("Bu randevuyu kalıcı olarak silmek istediğinize emin misiniz?")) return;
 
-  if (String(id).startsWith("local-") || !isNaN(id)) {
+  if (String(id).startsWith("local-")) {
     try {
       let localAppointments = JSON.parse(localStorage.getItem("hk_appointments_db")) || [];
       const index = localAppointments.findIndex(app => String(app.id) === String(id));
