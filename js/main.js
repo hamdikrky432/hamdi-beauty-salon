@@ -909,19 +909,20 @@ window.loadAdminCustomers = async function () {
          }
      } catch(e) { }
 
-     // 2. Supabase appointments tablosundaki 'registered' satırlarından gerçek üye verilerini çek
+     // 2. Supabase appointments tablosundan tüm kullanıcıları (kayıtlı + misafir/sadece randevu alan) çek
      try {
-       const { data } = await window.supabaseClient.from('appointments').select('*').eq('status', 'registered');
+       const { data } = await window.supabaseClient.from('appointments').select('*');
        if (data && Array.isArray(data)) {
-          data.forEach(app => {
+          // Önce 'registered' olanları asıl üye olarak ekle
+          data.filter(a => a.status === 'registered').forEach(app => {
              if (app && app.user_name) {
                  let uName = String(app.user_name);
                  let uEmail = app.email || "Belirtilmedi";
-                 let uPhone = app.expert || "Gizli";
+                 let uPhone = app.expert || "Telefon Belirtilmemiş";
                  
                  let isDuplicate = false;
                  for (let i = 0; i < merged.length; i++) {
-                     if (merged[i].email === uEmail) { isDuplicate = true; break; }
+                     if (merged[i].email === uEmail || merged[i].fname.indexOf(uName) !== -1) { isDuplicate = true; break; }
                  }
                  if (!isDuplicate) {
                      let parts = uName.split(' ');
@@ -936,8 +937,33 @@ window.loadAdminCustomers = async function () {
                  }
              }
           });
+          
+          // Sonra form doldurup kaydolmamış sadece randevu alan eski kullanıcıları (misafirleri) ekle
+          data.filter(a => a.status !== 'registered' && a.status !== 'message').forEach(app => {
+             if (app && app.user_name && String(app.user_name).trim() !== "" && app.user_name !== "Misafir") {
+                 let uName = String(app.user_name);
+                 let isDuplicate = false;
+                 for (let i = 0; i < merged.length; i++) {
+                     let existingFullName = String(merged[i].fname + " " + (merged[i].lname||""));
+                     if (existingFullName.indexOf(uName) !== -1 || uName.indexOf(merged[i].fname) !== -1) {
+                         isDuplicate = true; break;
+                     }
+                 }
+                 if (!isDuplicate) {
+                     merged.push({ 
+                       fname: uName, 
+                       lname: "(Randevu Müşterisi)", 
+                       email: uName.replace(/\s/g, "").toLowerCase() + "@gmail.com",
+                       phone: "Telefon Belirtilmemiş"
+                     });
+                 }
+             }
+          });
        }
-     } catch(err) { }
+     } catch(err) { 
+         container.innerHTML = `<div style="padding:40px; text-align:center; color:red;">Kritik Hata: ${err.message}</div>`;
+         return;
+     }
 
      if (merged.length === 0) {
         container.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Henüz sisteme kayıtlı müşteri bulunmuyor.</div>';
@@ -948,7 +974,7 @@ window.loadAdminCustomers = async function () {
      for (let i = 0; i < merged.length; i++) {
         let user = merged[i];
         let badgeType = (i % 3 === 0) ? '<span class="badge" style="background:#e3f2fd; color:#1565c0;">VIP</span>' : '<span class="badge" style="background:#f5f5f5; color:#616161;">Standart</span>';
-        let phoneNum = user.phone || "Güvenlik Nedeniyle Gizli";
+        let phoneNum = user.phone || "Telefon Belirtilmemiş";
         
         let safeName = String(user.fname || "İsimsiz Kullanıcı");
         let safeLname = user.lname ? " " + String(user.lname) : "";
@@ -966,7 +992,7 @@ window.loadAdminCustomers = async function () {
               ${badgeType}
               <div style="display:flex; gap:8px;">
                 <button class="btn btn--outline btn--sm" onclick="showLocalToast('Müşteri detayı henüz aktif değil.')"><i class="fa-solid fa-pen"></i> Düzenle</button>
-                <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;" onclick="deleteAdminCustomer('${user.email}')"><i class="fa-solid fa-trash"></i> Sil</button>
+                <button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;" onclick="deleteAdminCustomer('${user.email}', '${safeName}${safeLname}')"><i class="fa-solid fa-trash"></i> Sil</button>
               </div>
             </div>
           </div>
@@ -1017,20 +1043,33 @@ window.deleteAdminAppointment = async function(id) {
   }
 };
 
-window.deleteAdminCustomer = function(email) {
-  if (!confirm("Bu müşteriyi sistemden silmek istediğinize emin misiniz?")) return;
+window.deleteAdminCustomer = async function(email, fullName) {
+  if (!confirm("Bu müşteriyi (ve varsa geçmiş randevularını) sistemden silmek istediğinize emin misiniz?")) return;
 
   try {
+    // 1. LocalStorage üzerinden de sil (Varsa)
     let users = JSON.parse(localStorage.getItem("hk_users_db")) || [];
     const index = users.findIndex(u => u.email === email);
     if (index !== -1) {
       users.splice(index, 1);
       localStorage.setItem("hk_users_db", JSON.stringify(users));
-      showLocalToast("Müşteri başarıyla silindi.", false);
-      loadAdminCustomers();
-    } else {
-      showLocalToast("Müşteri bulunamadı.", true);
     }
+
+    // 2. Supabase Cloud'dan Sil
+    fullName = fullName ? fullName.trim() : null;
+    
+    // Asıl kayıtlı olanı (registered) email üzerinden sil
+    if (email && email.indexOf("@") !== -1) {
+       await window.supabaseClient.from('appointments').delete().eq('email', email).eq('status', 'registered');
+    }
+    
+    // Eski/eski nesil randevuları isim üzerinden sil
+    if (fullName) {
+       await window.supabaseClient.from('appointments').delete().eq('user_name', fullName);
+    }
+
+    showLocalToast("Müşteri başarıyla silindi.", false);
+    loadAdminCustomers();
   } catch(e) {
     console.error(e);
     showLocalToast("Silme işlemi sırasında hata oluştu.", true);
