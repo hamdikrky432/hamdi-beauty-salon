@@ -71,6 +71,8 @@
             class="fa-solid fa-calendar-days"></i> Tüm Randevular</button>
         <button class="sidebar-link" onclick="switchPanel('customers', this)"><i class="fa-solid fa-users"></i>
           Müşteri Yönetimi</button>
+        <button class="sidebar-link" onclick="switchPanel('messages', this)"><i class="fa-solid fa-envelope"></i>
+          Gelen Mesajlar</button>
         <button class="sidebar-link" onclick="switchPanel('services', this)"><i class="fa-solid fa-list-check"></i>
           Hizmetler / Fiyatlar</button>
         <button class="sidebar-link" onclick="switchPanel('profile', this)"><i class="fa-solid fa-gear"></i>
@@ -193,6 +195,32 @@
         </div>
       </section>
 
+
+      <section id="panel-messages" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Gelen İletişim Mesajları</h2>
+            <p class="panel-desc">Kullanıcıların 'Bize Ulaşın' kısımlarından gönderdiği tüm mesajlar.</p>
+          </div>
+          <button class="btn btn--outline btn--sm" onclick="markAllMessagesRead()"><i class="fa-solid fa-check-double"></i> Tümünü Okundu İşaretle</button>
+        </div>
+        <div class="appointment-list" style="background:#fff; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.05); overflow:hidden;">
+          <table style="width:100%; border-collapse: collapse; text-align:left;">
+            <thead>
+              <tr style="background:#f9f9f9; border-bottom:2px solid #eee;">
+                <th style="padding:15px 20px;">Gönderen & E-posta</th>
+                <th style="padding:15px 20px;">Tarih</th>
+                <th style="padding:15px 20px;">Mesaj</th>
+                <th style="padding:15px 20px;">Durum</th>
+                <th style="padding:15px 20px;">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="admin-messages-list">
+               <tr><td colspan="5" style="text-align:center; padding: 30px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section id="panel-profile" class="panel">
         <div class="panel-header">

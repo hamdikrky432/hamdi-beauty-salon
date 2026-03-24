@@ -96,6 +96,9 @@ window.handleRegister = async function (event) {
             }
             showLocalToast(errorMessage, true);
         } else {
+            // Otomatik girişi engelle (Çıkış yap) ve logine yönlendir
+            await window.supabaseClient.auth.signOut();
+
             // Başarılı kayıtta, admin panelinde "Üyeler" listesinde gözükebilmesi için Locale de ekleyelim
             let users = [];
             try { users = JSON.parse(localStorage.getItem("hk_users_db")) || []; } catch (e) { }

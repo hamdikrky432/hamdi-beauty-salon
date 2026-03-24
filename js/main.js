@@ -602,6 +602,8 @@ window.loadAdminNotifications = async function () {
 
     if (safeMessages.length === 0) {
       listDiv.innerHTML = "<div style='text-align:center; color:#888; padding:20px;'>Henüz mesaj yok.</div>";
+      const messagesTable = document.getElementById("admin-messages-list");
+      if(messagesTable) messagesTable.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 30px;">Henüz mesaj yok.</td></tr>';
       return;
     }
 
@@ -617,10 +619,60 @@ window.loadAdminNotifications = async function () {
           `;
     }).join('');
 
+    const messagesTable = document.getElementById("admin-messages-list");
+    if (messagesTable) {
+        messagesTable.innerHTML = safeMessages.map(m => {
+            const dateStr = new Date(m.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+            const statusBadge = m.is_read ? '<span class="badge approved">Okundu</span>' : '<span class="badge pending">Okunmadı</span>';
+            const actionBtn = m.is_read ? '' : `<button class="btn btn--sm" style="background:#4caf50; color:#fff; border:none; border-radius:4px; margin-right:4px; padding:6px 12px; cursor:pointer;" onclick="markSingleMessageRead('${m.id}')"><i class="fa-solid fa-check"></i> Okundu</button>`;
+            
+            return `
+            <tr style="background: ${m.is_read ? 'transparent' : '#fffcf2'}; border-bottom:1px solid #eee;">
+                <td style="padding:15px 20px;"><strong>${m.name}</strong><br><a href="mailto:${m.email}" style="color:var(--color-primary); font-size:0.85rem;">${m.email}</a></td>
+                <td style="padding:15px 20px;">${dateStr}</td>
+                <td style="padding:15px 20px; max-width:300px; word-wrap:break-word;">${m.message}</td>
+                <td style="padding:15px 20px;">${statusBadge}</td>
+                <td style="padding:15px 20px;">${actionBtn}<button class="btn btn--sm" style="background:#f44336; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;" onclick="deleteMessage('${m.id}')"><i class="fa-solid fa-trash"></i> Sil</button></td>
+            </tr>
+            `;
+        }).join('');
+    }
+
   } catch (err) {
     console.error(err);
     listDiv.innerHTML = "<div style='text-align:center; color:#f44336; padding:20px;'>Bildirimler yüklenemedi.</div>";
   }
+};
+
+window.markSingleMessageRead = async function(id) {
+    if (String(id).startsWith("local-")) {
+        try {
+            const localMessages = JSON.parse(localStorage.getItem("hk_messages_db")) || [];
+            const idx = localMessages.findIndex(m => String(m.id) === String(id));
+            if (idx !== -1) {
+                localMessages[idx].is_read = true;
+                localStorage.setItem("hk_messages_db", JSON.stringify(localMessages));
+            }
+        } catch(e) {}
+    } else {
+        await window.supabaseClient.from('messages').update({ is_read: true }).eq('id', id);
+    }
+    loadAdminNotifications();
+};
+
+window.deleteMessage = async function(id) {
+    if(!confirm("Mesajı silmek istediğinize emin misiniz?")) return;
+    if (String(id).startsWith("local-")) {
+        try {
+            let localMessages = JSON.parse(localStorage.getItem("hk_messages_db")) || [];
+            localMessages = localMessages.filter(m => String(m.id) !== String(id));
+            localStorage.setItem("hk_messages_db", JSON.stringify(localMessages));
+        } catch(e) {}
+    } else {
+        await window.supabaseClient.from('messages').delete().eq('id', id);
+    }
+    showLocalToast("Mesaj silindi.");
+    loadAdminNotifications();
 };
 
 window.markAllMessagesRead = async function () {
