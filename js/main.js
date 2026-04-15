@@ -138,6 +138,7 @@ window.handleBooking = async function (event) {
   try {
     // Kullanıcı kontrolü
     let currentUser = "Misafir";
+    let currentUserEmail = "";
     let userId = null;
     try {
       const userObj = JSON.parse(localStorage.getItem("hk_auth_user"));
@@ -145,6 +146,7 @@ window.handleBooking = async function (event) {
         let n = userObj.name || "";
         if (n.includes("undefined") || n.trim() === "") n = (userObj.fname && userObj.lname ? userObj.fname + " " + userObj.lname : "");
         currentUser = n || userObj.email || "Kullanıcı";
+        currentUserEmail = userObj.email || "";
         userId = userObj.id || null;
       }
     } catch (e) { }
@@ -196,6 +198,19 @@ window.handleBooking = async function (event) {
       localStorage.setItem("hk_appointments_db", JSON.stringify(localAppointments));
     }
 
+    try {
+      if (window.emailjs && currentUserEmail) {
+          await window.emailjs.send("service_vij2upt", "template_froj7k6", {
+              user_name: currentUser.split(" ")[0] || currentUser, // Kısa isim
+              email: currentUserEmail,
+              service: service,
+              date: date,
+              time: time,
+              expert: expert
+          });
+      }
+    } catch(err) { console.warn("EmailJS Booking:", err); }
+
     showLocalToast("Randevunuz başarıyla oluşturuldu. Yönlendiriliyorsunuz...");
     event.target.reset();
 
@@ -217,12 +232,14 @@ window.handleBooking = async function (event) {
     
     // Retrieve values even if variables throw
     let fbUser = "Misafir";
+    let fbEmail = "";
     try {
       const uObj = JSON.parse(localStorage.getItem("hk_auth_user"));
       if (uObj) {
           let n = uObj.name || "";
           if (n.includes("undefined") || n.trim() === "") n = (uObj.fname && uObj.lname ? uObj.fname + " " + uObj.lname : "");
           fbUser = n || uObj.email || "Kullanıcı";
+          fbEmail = uObj.email || "";
       }
     } catch(e) {}
 
@@ -240,6 +257,19 @@ window.handleBooking = async function (event) {
     });
     localStorage.setItem("hk_appointments_db", JSON.stringify(localAppointments));
     
+    try {
+      if (window.emailjs && fbEmail) {
+          await window.emailjs.send("service_vij2upt", "template_froj7k6", {
+              user_name: fbUser.split(" ")[0] || fbUser,
+              email: fbEmail,
+              service: document.getElementById("book-service")?.value || "Belirtilmedi",
+              date: document.getElementById("book-date")?.value || "-",
+              time: document.getElementById("book-time")?.value || "-",
+              expert: document.getElementById("book-expert")?.value || "Farketmez"
+          });
+      }
+    } catch(err) { console.warn("EmailJS Booking Fallback:", err); }
+
     showLocalToast("Randevunuz başarıyla oluşturuldu. Yönlendiriliyorsunuz...");
     event.target.reset();
     

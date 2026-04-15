@@ -70,8 +70,8 @@ window.handleRegister = async function (event) {
             console.error("Kayıt Hatası:", error.message);
 
 
-            if (error.message.includes("rate limit") || error.message.includes("invalid") || error.message.includes("fetch")) {
-                console.warn("Supabase limiti aşıldı! Sunum için LocalStorage ile devam ediliyor.");
+            if (error.message.includes("rate limit") || error.message.includes("invalid") || error.message.includes("fetch") || error.message.includes("security purposes") || error.message.includes("exceeded")) {
+                console.warn("Supabase limiti aşıldı veya ağ hatası! Sunum için LocalStorage ile devam ediliyor.");
                 showLocalToast("Kayıt işleminiz başarıyla tamamlandı, yönlendiriliyorsunuz...");
 
 
@@ -79,6 +79,16 @@ window.handleRegister = async function (event) {
                 try { users = JSON.parse(localStorage.getItem("hk_users_db")) || []; } catch (e) { }
                 users.push({ fname, lname, email, password, role: 'user' });
                 localStorage.setItem("hk_users_db", JSON.stringify(users));
+
+                // Fallback durumunda da sistemin mail göndermesini sağlayalım (Rate limit atlatıldığında)
+                try {
+                    if (window.emailjs) {
+                        await window.emailjs.send("service_vij2upt", "template_6nvkhgp", {
+                            user_name: fname,
+                            email: email
+                        });
+                    }
+                } catch (err) { console.warn("EmailJS error:", err); }
 
                 setTimeout(() => {
                     window.location.href = "login.html";
@@ -118,6 +128,15 @@ window.handleRegister = async function (event) {
                 users.push({ fname, lname, email, password, role: 'user', phone: phone });
                 localStorage.setItem("hk_users_db", JSON.stringify(users));
             }
+
+            try {
+                if (window.emailjs) {
+                    await window.emailjs.send("service_vij2upt", "template_6nvkhgp", {
+                        user_name: fname,
+                        email: email
+                    });
+                }
+            } catch (err) { console.warn("EmailJS error:", err); }
 
             showLocalToast("Kayıt işleminiz başarıyla tamamlandı, yönlendiriliyorsunuz...");
             setTimeout(() => {

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Randevu Onayı</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f5f7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 40px; margin-bottom: 40px;">
+        <tr>
+            <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="background-color: #1a1a2e; padding: 40px 20px;">
+                            <h1 style="color: #d4af37; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 2px;">HAMDİ KARAKAYA <span style="color: #ff2e63; font-weight: 300;">BEAUTY</span></h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 50px 40px;">
+                            <h2 style="color: #1a1a2e; font-size: 22px; margin-top: 0; margin-bottom: 25px; font-weight: 600;">Randevunuz Onaylandı!</h2>
+                            <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+                                Merhaba <strong>{{user_name}}</strong>,<br><br>
+                                Hamdi Karakaya Beauty'den oluşturduğunuz randevu sistemimize başarıyla eklendi. Sizi ağırlamak için sabırsızlanıyoruz. Randevu detaylarınız aşağıdadır:
+                            </p>
+                            
+                            <!-- Appointment Details Box -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8f9fa; border-left: 4px solid #d4af37; border-radius: 4px; padding: 25px;">
+                                <tr>
+                                    <td style="padding-bottom: 15px;">
+                                        <p style="margin: 0; font-size: 14px; color: #888; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Hizmet</p>
+                                        <p style="margin: 5px 0 0; font-size: 18px; color: #1a1a2e; font-weight: 600;">{{service}}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 15px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td width="50%">
+                                                    <p style="margin: 0; font-size: 14px; color: #888; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Tarih</p>
+                                                    <p style="margin: 5px 0 0; font-size: 16px; color: #1a1a2e; font-weight: 600;">{{date}}</p>
+                                                </td>
+                                                <td width="50%">
+                                                    <p style="margin: 0; font-size: 14px; color: #888; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Saat</p>
+                                                    <p style="margin: 5px 0 0; font-size: 16px; color: #1a1a2e; font-weight: 600;">{{time}}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p style="margin: 0; font-size: 14px; color: #888; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Uzman</p>
+                                        <p style="margin: 5px 0 0; font-size: 16px; color: #ff2e63; font-weight: 600;">{{expert}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Reminders -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 30px;">
+                                <tr>
+                                    <td width="40" valign="top">
+                                        <div style="background-color: #ffe6eb; border-radius: 50%; width: 30px; height: 30px; text-align: center; line-height: 30px; color: #ff2e63; font-weight: bold;">!</div>
+                                    </td>
+                                    <td>
+                                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">İşleminizin tam vaktinde başlayabilmesi için randevu saatinizden <strong>10 dakika önce</strong> salonumuzda olmanızı rica ederiz.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" style="background-color: #f8f9fa; padding: 30px 40px; border-top: 1px solid #eeeeee;">
+                            <p style="margin: 0 0 10px 0; color: #4a4a4a; font-size: 16px; font-weight: 500;">Sağlıklı ve güzellik dolu günler dileriz.</p>
+                            <p style="margin: 0; font-size: 18px; font-weight: bold;">
+                                <span style="color: #1a1a2e;">Hamdi Karakaya</span> <span style="color: #ff2e63;">BEAUTY</span> <span style="color: #666; font-size: 14px; font-weight: normal;">Ekibi</span>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+                <p style="color: #999999; font-size: 12px; margin-top: 20px; text-align: center;">Bu e-posta otomatik olarak oluşturulmuştur. Lütfen yanıtlamayınız.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
